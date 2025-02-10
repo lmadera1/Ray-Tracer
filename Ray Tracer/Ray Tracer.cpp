@@ -1,25 +1,39 @@
 // Ray Tracer.cpp : This file contains the 'main' function. Program execution begins and ends there.
 //
 #include "Ray Tracer.h"
-#include <iostream>
-#include <fstream>
+
 
 string filename = "output.ppm";
 int width = 800;
 int height = 800;
 
+Camera camera;
+
+Vec3 gradient;
+
+Sphere sphere;
+
 int main()
 {
     vector<vector<Vec3>> image;
 
+    camera = Camera(width, height);
+
+    sphere = Sphere();
+
+    gradient = Vec3(255, 255, 255);
+
+    cout << "Printing Image" << endl;
     GetImage(image, width, height);
 
     try 
     {
+        cout << "Writing to File" << endl;
         WritePPM(image, filename);
     }
     catch(exception ex) 
     {
+        cout << "Error" << endl;
         return 1;
     }
 
@@ -40,8 +54,8 @@ void GetImage(vector<vector<Vec3>>& image, const int width, const int height) {
 
 Vec3 GetColor(const int i, const int j) 
 {
-
-    return Vec3(255, 255, 0);
+    
+    return gradient;
 }
 
 void WritePPM(const vector<vector<Vec3>>& image, const string& filename) {

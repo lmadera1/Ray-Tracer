@@ -7,6 +7,6 @@ Ray::Ray()
 }
 Ray::Ray(Vec3 pos, Vec3 dir) 
 {
-	this->pos = pos;
-	this->dir = dir;
+	pos = pos;
+	dir = dir;
 }
