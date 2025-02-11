@@ -58,7 +58,7 @@ float Vec3::Z() const
 
 double Vec3::length() const 
 {
-	return std::sqrt(x*x + y*y + z*z);
+	return sqrt(x*x + y*y + z*z);
 }
 
 

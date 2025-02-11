@@ -27,6 +27,16 @@ Vec3 Camera::Origin() const
 {
 	return origin;
 }
+
+float Camera::SensorW() const 
+{
+	return sensor_width;
+}
+
+float Camera::SensorH() const 
+{
+	return sensor_height;
+}
 	
 
 

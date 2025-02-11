@@ -4,8 +4,8 @@
 
 
 string filename = "output.ppm";
-int width = 800;
-int height = 800;
+int width = 400;
+int height = 400;
 
 Camera camera;
 
@@ -17,11 +17,11 @@ int main()
 {
     vector<vector<Vec3>> image;
 
-    camera = Camera(width, height);
+    camera = Camera();
 
-    sphere = Sphere(Vec3(0, 0, -100.0005), 100.0f);
+    sphere = Sphere(Vec3(0, 0, -0.25f), 0.061f);
 
-    background = Vec3(255, 255, 255);
+    background = Vec3(0, 0, 0);
 
     cout << "Printing Image" << endl;
     GetImage(image, width, height);
@@ -56,7 +56,7 @@ void GetImage(vector<vector<Vec3>>& image, const int width, const int height) {
 //i and j go from [0, 1]
 Vec3 GetColor(const float i, const float j) 
 {
-    Vec3 origin = camera.LowerCorner() + i * width * camera.Right() + j * height * camera.Up();
+    Vec3 origin = camera.LowerCorner() + i * camera.SensorW() * camera.Right() + j * camera.SensorH() * camera.Up();
     Vec3 magnitude = origin - camera.Origin();
 
     magnitude.normalize();
@@ -79,7 +79,7 @@ bool hits_sphere(const Sphere sphere, const Ray ray)
     double c = Vec3::dot(OC, OC) - sphere.Radius() * sphere.Radius();
     double rad = b * b - 4 * a * c;
 
-    if (rad < 0) return false;
+    if (rad <= 0) return false;
 
     return true;
 }
