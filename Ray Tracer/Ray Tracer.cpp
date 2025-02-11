@@ -9,7 +9,7 @@ int height = 800;
 
 Camera camera;
 
-Vec3 gradient;
+Vec3 background;
 
 Sphere sphere;
 
@@ -21,7 +21,7 @@ int main()
 
     sphere = Sphere();
 
-    gradient = Vec3(255, 255, 255);
+    background = Vec3(255, 255, 255);
 
     cout << "Printing Image" << endl;
     GetImage(image, width, height);
@@ -52,10 +52,27 @@ void GetImage(vector<vector<Vec3>>& image, const int width, const int height) {
     }
 }
 
+
+//i and j go from [0, 1]
 Vec3 GetColor(const int i, const int j) 
 {
+    Vec3 origin = camera.LowerCorner() + i * width * camera.Right() + j * height * camera.Up();
+    Vec3 magnitude = origin - camera.Origin();
+
+    Ray ray(origin, magnitude);
+
+    if (hits_sphere(sphere, ray)) 
+    {
+        return Vec3(0, 0, 255);
+    }
     
-    return gradient;
+    return background;
+}
+
+bool hits_sphere(const Sphere sphere, const Ray ray) 
+{
+
+    return true;
 }
 
 void WritePPM(const vector<vector<Vec3>>& image, const string& filename) {
@@ -84,7 +101,7 @@ void WritePPM(const vector<vector<Vec3>>& image, const string& filename) {
     for (int i = 0; i < width; i++) {
         for (int j = 0; j < height; j++) {
             Vec3 color = image[i][j];
-            file << color.x << " " << color.y << " " << color.z << "\n";
+            file << color.X() << " " << color.Y() << " " << color.Z() << "\n";
         }
     }
 

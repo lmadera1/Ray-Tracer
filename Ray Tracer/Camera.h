@@ -16,8 +16,16 @@ public:
 	{
 		right = Vec3(1, 0, 0);
 		up = Vec3(0, 1, 0);
-		LowerCorner = origin + forward * focal_length - right * width / 2 - up * height / 2;
+		lower_corner = origin + forward * focal_length - right * width / 2 - up * height / 2;
 	}
+
+	Vec3 Forward() const;
+	Vec3 Up() const;
+	Vec3 Right() const;
+
+	Vec3 LowerCorner() const;
+
+	Vec3 Origin() const;
 
 	~Camera();
 
@@ -29,6 +37,6 @@ private:
 	Vec3 right;
 	Vec3 up;
 	float focal_length;
-	Vec3 LowerCorner;
+	Vec3 lower_corner;
 };
 
