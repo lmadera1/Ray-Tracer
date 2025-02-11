@@ -32,6 +32,14 @@ Vec3 Vec3::operator/(const double scalar) const
 	return Vec3(x / scalar, y / scalar, z / scalar);
 }
 
+Vec3 Vec3::operator/=(const double scalar) 
+{
+	x /= scalar;
+	y /= scalar;
+	z /= scalar;
+	return *this;
+}
+
 float Vec3::X() const
 {
 	return x;
@@ -45,4 +53,21 @@ float Vec3::Y() const
 float Vec3::Z() const
 {
 	return z;
+}
+
+
+double Vec3::length() const 
+{
+	return std::sqrt(x*x + y*y + z*z);
+}
+
+
+void Vec3::normalize() 
+{
+	*this /= this->length();
+}
+
+double Vec3::dot(const Vec3& first, const Vec3& second) 
+{
+	return first.X() * second.X() + first.Y() * second.Y() + first.Z() * second.Z();
 }

@@ -19,7 +19,7 @@ int main()
 
     camera = Camera(width, height);
 
-    sphere = Sphere();
+    sphere = Sphere(Vec3(0, 0, -100.0005), 100.0f);
 
     background = Vec3(255, 255, 255);
 
@@ -44,7 +44,7 @@ void GetImage(vector<vector<Vec3>>& image, const int width, const int height) {
     for (int i = 0; i < width; i++) {
         vector<Vec3> column;
         for (int j = 0; j < height; j++) {
-            Vec3 color = GetColor(i, j);
+            Vec3 color = GetColor(static_cast<float>(i) / width, static_cast<float>(j) / height);
             column.push_back(color);
         }
 
@@ -54,10 +54,12 @@ void GetImage(vector<vector<Vec3>>& image, const int width, const int height) {
 
 
 //i and j go from [0, 1]
-Vec3 GetColor(const int i, const int j) 
+Vec3 GetColor(const float i, const float j) 
 {
     Vec3 origin = camera.LowerCorner() + i * width * camera.Right() + j * height * camera.Up();
     Vec3 magnitude = origin - camera.Origin();
+
+    magnitude.normalize();
 
     Ray ray(origin, magnitude);
 
@@ -71,6 +73,13 @@ Vec3 GetColor(const int i, const int j)
 
 bool hits_sphere(const Sphere sphere, const Ray ray) 
 {
+    Vec3 OC = ray.Origin() - sphere.Center();
+    double a = Vec3::dot(ray.Direction(), ray.Direction());
+    double b = 2 * Vec3::dot(ray.Direction(), OC);
+    double c = Vec3::dot(OC, OC) - sphere.Radius() * sphere.Radius();
+    double rad = b * b - 4 * a * c;
+
+    if (rad < 0) return false;
 
     return true;
 }

@@ -1,10 +1,20 @@
 #include "Sphere.h"
 
-Sphere::Sphere() : pos(Vec3()), radius(1.0f)
+Sphere::Sphere() : center(Vec3()), radius(1.0f)
 {}
 
-Sphere::Sphere(Vec3 _pos, float _radius) : pos(_pos), radius(_radius)
+Sphere::Sphere(Vec3 _pos, double _radius) : center(_pos), radius(_radius)
 {}
+
+Vec3 Sphere::Center() const 
+{
+	return center;
+}
+
+double Sphere::Radius() const 
+{
+	return radius;
+}
 
 Sphere::~Sphere() 
 {}

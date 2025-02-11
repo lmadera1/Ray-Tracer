@@ -1,4 +1,7 @@
 #pragma once
+
+#include <cmath>
+
 class Vec3
 {
 public:
@@ -14,11 +17,19 @@ public:
 
 	Vec3 operator/(const double scalar) const;
 
+	Vec3 operator/=(const double scalar);
+
 	float X() const;
 
 	float Y() const;
 
 	float Z() const;
+
+	double length() const;
+
+	void normalize();
+
+	static double dot(const Vec3& first, const Vec3& second);
 
 	
 
