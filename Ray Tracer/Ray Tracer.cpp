@@ -4,8 +4,8 @@
 
 
 string filename = "output.ppm";
-int width = 400;
-int height = 400;
+int width = 640;
+int height = 360;
 
 Camera camera;
 
@@ -17,9 +17,13 @@ int main()
 {
     vector<vector<Vec3>> image;
 
+    float aspect_ratio = static_cast<float>(width) / height;
+
     camera = Camera();
 
-    sphere = Sphere(Vec3(0, 0, -0.25f), 0.061f);
+    camera.SetAspectRatio(aspect_ratio);
+
+    sphere = Sphere(Vec3(1, 0, -2.0f), 0.5f);
 
     background = Vec3(0, 0, 0);
 
@@ -40,15 +44,16 @@ int main()
     return 0;
 }
 
-void GetImage(vector<vector<Vec3>>& image, const int width, const int height) {
-    for (int i = 0; i < width; i++) {
-        vector<Vec3> column;
-        for (int j = 0; j < height; j++) {
-            Vec3 color = GetColor(static_cast<float>(i) / width, static_cast<float>(j) / height);
-            column.push_back(color);
+void GetImage(vector<vector<Vec3>>& image, const int width, const int height) 
+{
+    vector<Vec3> temp;
+    for (int w = 0; w < width; w++) {
+        temp = {};
+        for (int h = 0; h < height; h++) {
+            Vec3 color = GetColor(static_cast<float>(w) / width, static_cast<float>(h) / height);
+            temp.push_back(color);
         }
-
-        image.push_back(column);
+        image.push_back(temp);
     }
 }
 
@@ -56,7 +61,10 @@ void GetImage(vector<vector<Vec3>>& image, const int width, const int height) {
 //i and j go from [0, 1]
 Vec3 GetColor(const float i, const float j) 
 {
-    Vec3 origin = camera.LowerCorner() + i * camera.SensorW() * camera.Right() + j * camera.SensorH() * camera.Up();
+    Vec3 origin = camera.LowerCorner() + 
+        i * camera.SensorW() * camera.Right() + 
+        j * camera.SensorH() * camera.Up();
+
     Vec3 magnitude = origin - camera.Origin();
 
     magnitude.normalize();
@@ -65,10 +73,11 @@ Vec3 GetColor(const float i, const float j)
 
     if (hits_sphere(sphere, ray)) 
     {
-        return Vec3(0, 0, 255);
+        return Vec3(255, 0, 0);
     }
     
-    return background;
+    //Gradient from blue to white
+    return Vec3( (1-j) * 255, (1-j) * 255, 255);
 }
 
 bool hits_sphere(const Sphere sphere, const Ray ray) 
@@ -102,13 +111,15 @@ void WritePPM(const vector<vector<Vec3>>& image, const string& filename) {
     int width = image.size();
     int height = image[0].size();
 
+    cout << width << " " << height << endl;
+
     // Write PPM header
     file << "P3\n";
     file << width << " " << height << "\n";
     file << "255\n";
-
-    for (int i = 0; i < width; i++) {
-        for (int j = 0; j < height; j++) {
+    
+    for (int j = height - 1; j >= 0; j--) {
+        for (int i = 0; i < width; i++) {
             Vec3 color = image[i][j];
             file << color.X() << " " << color.Y() << " " << color.Z() << "\n";
         }

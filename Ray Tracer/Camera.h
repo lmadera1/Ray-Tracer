@@ -8,18 +8,12 @@ public:
 	{}
 
 	Camera(Vec3 pos, Vec3 dir)
-		: Camera(pos, dir, 0.0156f, 0.0156f, 0.01f)
+		: Camera(pos, dir, 0.0156f, 1.0f, 0.01f)
 	{}
 
-	Camera(Vec3 pos, Vec3 dir, float width, float height, float focal_length)
-		: origin(pos), forward(dir), focal_length(focal_length)
-	{
-		right = Vec3(1, 0, 0);
-		up = Vec3(0, 1, 0);
-		sensor_width = width;
-		sensor_height = height;
-		lower_corner = origin + forward * focal_length - right * sensor_width / 2 - up * sensor_height / 2;
-	}
+	Camera(Vec3 pos, Vec3 dir, float sensor_width, float aspect_ratio, float focal_length);
+
+	void SetAspectRatio(float aspect_ratio);
 
 	Vec3 Forward() const;
 	Vec3 Up() const;
