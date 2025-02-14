@@ -27,7 +27,7 @@ public:
 
 	double length() const;
 
-	void normalize();
+	Vec3 normalize();
 
 	static double dot(const Vec3& first, const Vec3& second);
 
@@ -38,4 +38,3 @@ private:
 	float y;
 	float z;
 };
-

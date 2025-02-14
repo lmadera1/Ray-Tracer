@@ -62,9 +62,9 @@ double Vec3::length() const
 }
 
 
-void Vec3::normalize() 
+Vec3 Vec3::normalize() 
 {
-	*this /= this->length();
+	return Vec3(*this /= this->length());
 }
 
 double Vec3::dot(const Vec3& first, const Vec3& second) 

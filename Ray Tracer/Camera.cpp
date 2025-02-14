@@ -6,8 +6,7 @@ Camera::Camera(Vec3 pos, Vec3 dir, float _sensor_width, float aspect_ratio, floa
 {
 	right = Vec3(1, 0, 0);
 	up = Vec3(0, 1, 0);
-	sensor_height = sensor_width / aspect_ratio;
-	lower_corner = origin + forward * focal_length - right * sensor_width / 2 - up * sensor_height / 2;
+	SetAspectRatio(aspect_ratio);
 }
 
 Camera::~Camera()
