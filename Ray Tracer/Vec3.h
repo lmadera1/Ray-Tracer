@@ -1,7 +1,6 @@
 #pragma once
-
 #include <cmath>
-
+#include <numbers>
 class Vec3
 {
 public:
@@ -19,6 +18,8 @@ public:
 
 	Vec3 operator/=(const double scalar);
 
+	Vec3 operator*=(const double scalar);
+
 	float X() const;
 
 	float Y() const;
@@ -31,9 +32,6 @@ public:
 
 	static double dot(const Vec3& first, const Vec3& second);
 
-	
-
-private:
 	float x;
 	float y;
 	float z;

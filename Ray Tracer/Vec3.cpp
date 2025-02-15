@@ -40,6 +40,13 @@ Vec3 Vec3::operator/=(const double scalar)
 	return *this;
 }
 
+Vec3 Vec3::operator*=(const double scalar) {
+	x *= scalar;
+	y *= scalar;
+	z *= scalar;
+	return *this;
+}
+
 float Vec3::X() const
 {
 	return x;

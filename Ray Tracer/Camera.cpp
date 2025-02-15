@@ -15,7 +15,7 @@ Camera::~Camera()
 void Camera::SetAspectRatio(float aspect_ratio)
 {
 	sensor_height = sensor_width / aspect_ratio;
-	lower_corner = origin + forward * focal_length - right * sensor_width / 2 - up * sensor_height / 2;
+	upper_left = origin + forward * focal_length - right * sensor_width / 2 + up * sensor_height / 2;
 }
 
 Vec3 Camera::Up() const
@@ -33,8 +33,8 @@ Vec3 Camera::Forward() const
 	return Vec3(forward);
 }
 
-Vec3 Camera::LowerCorner() const{
-	return Vec3(lower_corner);
+Vec3 Camera::UpperLeft() const{
+	return Vec3(upper_left);
 }
 
 Vec3 Camera::Origin() const

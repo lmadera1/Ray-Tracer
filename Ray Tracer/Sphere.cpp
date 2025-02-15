@@ -23,7 +23,7 @@ Vec3 Sphere::Color() const
 
 void Sphere::SetColor(Vec3 _color) 
 {
-	color = _color;
+	color = _color.normalize();
 }
 
 Sphere::~Sphere() 

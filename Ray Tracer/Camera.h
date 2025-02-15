@@ -19,7 +19,7 @@ public:
 	Vec3 Up() const;
 	Vec3 Right() const;
 
-	Vec3 LowerCorner() const;
+	Vec3 UpperLeft() const;
 
 	Vec3 Origin() const;
 
@@ -37,7 +37,7 @@ private:
 	Vec3 right;
 	Vec3 up;
 	float focal_length;
-	Vec3 lower_corner;
+	Vec3 upper_left;
 	float sensor_width;
 	float sensor_height;
 };

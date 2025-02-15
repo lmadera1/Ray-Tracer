@@ -2,8 +2,7 @@
 //
 #include "Ray Tracer.h"
 
-
-string filename = "output.ppm";
+string filename = "output.png";
 int width = 1920;
 int height = 1080;
 
@@ -17,7 +16,7 @@ Sun sun;
 
 int main()
 {
-    vector<vector<Vec3>> image;
+    vector<unsigned char> image;
 
     float aspect_ratio = static_cast<float>(width) / height;
 
@@ -29,18 +28,15 @@ int main()
 
     sphere.SetColor(Vec3(255, 0, 80));
 
-    sun = Sun(Vec3(0, 0.5, 0.5));
+    sun = Sun(Vec3(0, -1, -0.25));
 
     cout << "Printing Image" << endl;
     GetImage(image, width, height);
 
-    try 
-    {
-        cout << "Writing to File" << endl;
-        WritePPM(image, filename);
-    }
-    catch(exception ex) 
-    {
+    cout << "Writing to File" << endl;
+    unsigned error = lodepng::encode(filename, image, width, height);
+
+    if (error) {
         cout << "Error" << endl;
         return 1;
     }
@@ -48,16 +44,26 @@ int main()
     return 0;
 }
 
-void GetImage(vector<vector<Vec3>>& image, const int width, const int height) 
+void GetImage(vector<unsigned char>& image, const int width, const int height) 
 {
-    vector<Vec3> temp;
-    for (int w = 0; w < width; w++) {
-        temp.clear();
-        for (int h = 0; h < height; h++) {
+    for (int h = 0; h < height; h++) {
+        
+        for (int w = 0; w < width; w++) {
             Vec3 color = GetColor(static_cast<float>(w) / width, static_cast<float>(h) / height);
-            temp.push_back(color);
+            //Convert color to values of 255
+            color *= 255;
+
+            unsigned char r, g, b, a;
+            r = static_cast<unsigned char>(color.X());
+            g = static_cast<unsigned char>(color.Y());
+            b = static_cast<unsigned char>(color.Z());
+            a = 255;
+            image.push_back(r);
+            image.push_back(g);
+            image.push_back(b);
+            image.push_back(a);
         }
-        image.push_back(temp);
+        
     }
 }
 
@@ -65,8 +71,9 @@ void GetImage(vector<vector<Vec3>>& image, const int width, const int height)
 //i and j go from [0, 1]
 Vec3 GetColor(const float i, const float j) 
 {
-    Vec3 origin = camera.LowerCorner() + 
-        i * camera.SensorW() * camera.Right() + 
+
+    Vec3 origin = camera.UpperLeft() + 
+        i * camera.SensorW() * camera.Right() - 
         j * camera.SensorH() * camera.Up();
 
     Vec3 magnitude = origin - camera.Origin();
@@ -75,18 +82,52 @@ Vec3 GetColor(const float i, const float j)
 
     Ray ray(origin, magnitude);
 
-    if (hits_sphere(sphere, ray)) 
-    {
-        float brightness = Vec3::dot(sun.direction, ray.direction);
-        if (brightness < 0) brightness = 0;
-        return sphere.Color() * brightness;
+    Ray normal;
+
+    if (hits_sphere(sphere, ray, normal)) 
+    {   
+        //Calculate brightness
+        float brightness = 0;
+        float dotProduct = Vec3::dot(sun.direction, normal.direction);
+        if (dotProduct < 0) 
+        {
+            brightness = -1 * dotProduct;
+        }
+
+        //Calculate specular
+        float s = 50.0f;
+
+        float ks = 0.2;
+
+        Vec3 V = -1 * ray.direction.normalize();
+
+        Vec3 R = 2 * Vec3::dot(normal.direction, sun.direction) * normal.direction - sun.direction;
+
+        float specular = min(0.0, Vec3::dot(R, V));
+        
+        specular *= -1;
+
+        specular = pow(specular, s);
+
+        Vec3 specularColor = Vec3(1, 1, 1);
+
+        Vec3 color = sphere.Color() * brightness + ks * specular * specularColor;
+
+        color.x = min(1.0f, color.x);
+
+        color.y = min(1.0f, color.y);
+
+        color.z = min(1.0f, color.z);
+
+
+        return color;
     }
 
     //Gradient from blue to white
-    return Vec3( (1-j) * 255, (1-j) * 255, 255);
+    return Vec3(j * 255, j * 255, 255).normalize();
 }
 
-bool hits_sphere(const Sphere sphere, Ray& ray) 
+bool hits_sphere(const Sphere sphere, const Ray& ray, Ray& normal) 
 {
     Vec3 OC = ray.origin - sphere.Center();
     double a = Vec3::dot(ray.direction, ray.direction);
@@ -105,56 +146,10 @@ bool hits_sphere(const Sphere sphere, Ray& ray)
 
     Vec3 Nhit = Phit - sphere.Center();
 
-    ray.origin = Phit;
+    normal.origin = Phit;
 
-    ray.direction = Nhit.normalize();
+    normal.direction = Nhit.normalize();
 
 
     return true;
-}
-
-
-void WritePPM(const vector<vector<Vec3>>& image, const string& filename) {
-    ofstream file(filename, ios::binary);
-
-    if (!file.is_open())
-    {
-        string msg = "Can't open file";
-        throw std::runtime_error(msg);
-    }
-
-    if (image.size() < 1 || image[0].size() < 1) 
-    {
-        string msg = "No image data to write";
-        throw std::runtime_error(msg);
-    }
-
-    int width = image.size();
-    int height = image[0].size();
-
-    // Write PPM header
-    //file << "P3\n";
-    file << "P6\n";
-    file << width << " " << height << "\n";
-    file << "255\n";
-
-    cout << "Start writing to file" << endl;
-
-    for (int j = height - 1; j >= 0; j--) {
-        for (int i = 0; i < width; i++) {
-
-            Vec3 color = image[i][j];
-            unsigned char red = static_cast<unsigned char>(color.X());
-            unsigned char green = static_cast<unsigned char>(color.Y());
-            unsigned char blue = static_cast<unsigned char>(color.Z());
-            file.write((char*)&red, 1);
-            file.write((char*)&green, 1);
-            file.write((char*)&blue, 1);
-
-        }
-    }
-
-    cout << "Done Writing to file" << endl;
-
-    file.close();
 }
