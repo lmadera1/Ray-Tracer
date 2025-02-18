@@ -3,14 +3,14 @@
 #include "Ray Tracer.h"
 
 string filename = "output.png";
-int width = 1920;
-int height = 1080;
+int width = 2560;
+int height = 1440;
 
 Camera camera;
 
 Vec3 background;
 
-Sphere sphere;
+vector<Object*> objects;
 
 Sun sun;
 
@@ -24,11 +24,16 @@ int main()
 
     camera.SetAspectRatio(aspect_ratio);
 
-    sphere = Sphere(Vec3(0, 0, -2.0f), 0.5f);
+    Sphere* sphere = new Sphere();
 
-    sphere.SetColor(Vec3(255, 0, 80));
+    sphere->center = Vec3(0, 0, -3);
 
-    sun = Sun(Vec3(0, -1, -0.25));
+    sphere->material.color = Vec3(255, 0, 0) / 255;
+
+    objects.push_back(sphere);
+
+    sun = Sun();
+    sun.direction = Vec3(0, -1, -1).normalize();
 
     cout << "Printing Image" << endl;
     GetImage(image, width, height);
@@ -40,6 +45,8 @@ int main()
         cout << "Error" << endl;
         return 1;
     }
+
+    delete sphere;
 
     return 0;
 }
@@ -84,72 +91,47 @@ Vec3 GetColor(const float i, const float j)
 
     Ray normal;
 
-    if (hits_sphere(sphere, ray, normal)) 
-    {   
-        //Calculate brightness
-        float brightness = 0;
-        float dotProduct = Vec3::dot(sun.direction, normal.direction);
-        if (dotProduct < 0) 
-        {
-            brightness = -1 * dotProduct;
+    for (Object* object : objects) {
+
+        if (object->hit(ray, normal)) {
+            Material material = object->material;
+
+            //Calculate brightness
+            float brightness = 0;
+            float dotProduct = Vec3::dot(sun.direction, normal.direction);
+            if (dotProduct < 0)
+            {
+                brightness = -1 * dotProduct;
+            }
+
+            //Calculate specular
+            Vec3 V = -1 * ray.direction.normalize();
+
+            Vec3 R = 2 * Vec3::dot(normal.direction, sun.direction) * normal.direction - sun.direction;
+
+            float specular = min(0.0, Vec3::dot(R, V));
+
+            specular *= -1;
+
+            specular = pow(specular, material.s);
+
+
+
+            Vec3 color = material.kd * material.color * brightness 
+                + material.ks * specular * material.specularColor;
+
+            color.x = min(1.0f, color.x);
+
+            color.y = min(1.0f, color.y);
+
+            color.z = min(1.0f, color.z);
+
+
+            return color;
         }
-
-        //Calculate specular
-        float s = 50.0f;
-
-        float ks = 0.2;
-
-        Vec3 V = -1 * ray.direction.normalize();
-
-        Vec3 R = 2 * Vec3::dot(normal.direction, sun.direction) * normal.direction - sun.direction;
-
-        float specular = min(0.0, Vec3::dot(R, V));
-        
-        specular *= -1;
-
-        specular = pow(specular, s);
-
-        Vec3 specularColor = Vec3(1, 1, 1);
-
-        Vec3 color = sphere.Color() * brightness + ks * specular * specularColor;
-
-        color.x = min(1.0f, color.x);
-
-        color.y = min(1.0f, color.y);
-
-        color.z = min(1.0f, color.z);
-
-
-        return color;
     }
 
     //Gradient from blue to white
-    return Vec3(j * 255, j * 255, 255).normalize();
+    return Vec3(j, j, 1);
 }
 
-bool hits_sphere(const Sphere sphere, const Ray& ray, Ray& normal) 
-{
-    Vec3 OC = ray.origin - sphere.Center();
-    double a = Vec3::dot(ray.direction, ray.direction);
-    double b = 2 * Vec3::dot(ray.direction, OC);
-    double c = Vec3::dot(OC, OC) - sphere.Radius() * sphere.Radius();
-    double rad = b * b - 4 * a * c;
-
-    if (rad < 0) return false;
-
-    double t;
-    if (rad == 0) { t = -b / (2 * a); }
-
-    else t = min(-b + sqrt(rad), -b - sqrt(rad)) / (2 * a);
-
-    Vec3 Phit = ray.origin + ray.direction * t;
-
-    Vec3 Nhit = Phit - sphere.Center();
-
-    normal.origin = Phit;
-
-    normal.direction = Nhit.normalize();
-
-
-    return true;
-}

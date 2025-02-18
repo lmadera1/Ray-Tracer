@@ -4,8 +4,9 @@
 class Vec3
 {
 public:
-	Vec3();
-	Vec3(float x, float y, float z);
+	Vec3() : Vec3(0.0f, 0.0f, 0.0f) {}
+
+	Vec3(float _x, float _y, float _z) : x(_x), y(_y), z(_z) {}
 	
 	Vec3 operator+(const Vec3& other) const;
 	Vec3 operator-(const Vec3& other) const;
