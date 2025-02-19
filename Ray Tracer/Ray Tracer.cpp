@@ -14,6 +14,10 @@ vector<Object*> objects;
 
 Sun sun;
 
+
+//Bug discovered: When single triangle with a = b = c = 0
+
+
 int main()
 {
     vector<unsigned char> image;
@@ -24,6 +28,13 @@ int main()
 
     camera.SetAspectRatio(aspect_ratio);
 
+    Triangle* triangle = new Triangle();
+
+    triangle->material.color = Vec3(255, 0, 0) / 255;
+
+    objects.push_back(triangle);
+
+    
     Sphere* sphere = new Sphere();
 
     sphere->center = Vec3(0, 0, -3);
@@ -31,6 +42,8 @@ int main()
     sphere->material.color = Vec3(255, 0, 0) / 255;
 
     objects.push_back(sphere);
+
+    
 
     sun = Sun();
     sun.direction = Vec3(0, -1, -1).normalize();
@@ -48,6 +61,8 @@ int main()
 
     delete sphere;
 
+    delete triangle;
+
     return 0;
 }
 
@@ -61,9 +76,9 @@ void GetImage(vector<unsigned char>& image, const int width, const int height)
             color *= 255;
 
             unsigned char r, g, b, a;
-            r = static_cast<unsigned char>(color.X());
-            g = static_cast<unsigned char>(color.Y());
-            b = static_cast<unsigned char>(color.Z());
+            r = static_cast<unsigned char>(color.x);
+            g = static_cast<unsigned char>(color.y);
+            b = static_cast<unsigned char>(color.z);
             a = 255;
             image.push_back(r);
             image.push_back(g);
@@ -96,25 +111,23 @@ Vec3 GetColor(const float i, const float j)
         if (object->hit(ray, normal)) {
             Material material = object->material;
 
-            //Calculate brightness
+            //Calculate diffuse
             float brightness = 0;
-            float dotProduct = Vec3::dot(sun.direction, normal.direction);
-            if (dotProduct < 0)
+            float dotProduct = dot(-1 * sun.direction, normal.direction);
+            if (dotProduct > 0)
             {
-                brightness = -1 * dotProduct;
+                brightness = dotProduct;
             }
 
             //Calculate specular
-            Vec3 V = -1 * ray.direction.normalize();
+            Vec3 V = ray.direction.normalize();
 
-            Vec3 R = 2 * Vec3::dot(normal.direction, sun.direction) * normal.direction - sun.direction;
+            Vec3 R = 2 * dot(normal.direction, sun.direction) * normal.direction - sun.direction;
 
-            float specular = min(0.0, Vec3::dot(R, V));
+            float specular = max(0.0f, dot(R, V));
 
-            specular *= -1;
 
             specular = pow(specular, material.s);
-
 
 
             Vec3 color = material.kd * material.color * brightness 

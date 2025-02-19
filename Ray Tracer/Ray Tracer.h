@@ -4,7 +4,6 @@
 #include <iostream>
 #include <fstream>
 #include <algorithm>
-#include "ray.h"
 #include "Vec3.h"
 #include "Camera.h"
 #include "Object.h"

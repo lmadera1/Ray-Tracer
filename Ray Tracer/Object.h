@@ -1,7 +1,6 @@
 #pragma once
 #include <algorithm>
 #include "Vec3.h"
-#include "Ray.h"
 #include "Material.h"
 
 
@@ -11,7 +10,9 @@ class Object
 {
 public:
 
-	virtual bool hit(const Ray& ray, Ray& normal) { return false; }
+	virtual bool hit(const Ray& ray, Ray& normal) const {
+		return false; 
+	}
 
 	Material material;
 
@@ -27,48 +28,26 @@ public:
 		material = Material();
 	}
 
-	bool hit(const Ray& ray, Ray& normal){
-		Vec3 OC = ray.origin - center;
-		double a = Vec3::dot(ray.direction, ray.direction);
-		double b = 2 * Vec3::dot(ray.direction, OC);
-		double c = Vec3::dot(OC, OC) - radius * radius;
-		double rad = b * b - 4 * a * c;
+	bool hit(const Ray& ray, Ray& normal) const;
 
-		if (rad < 0) return false;
-
-		double t;
-		if (rad == 0) { t = -b / (2 * a); }
-
-		else t = min(-b + sqrt(rad), -b - sqrt(rad)) / (2 * a);
-
-		Vec3 Phit = ray.origin + ray.direction * t;
-
-		Vec3 Nhit = Phit - center;
-
-		normal.origin = Phit;
-
-		normal.direction = Nhit.normalize();
-
-
-		return true;
-	}
-
-	Vec3 center;
 	float radius;
+	Vec3 center;
+	
 };
 
 
 class Triangle : public Object 
 {
-	Triangle() : Triangle(Vec3(), Vec3(), Vec3()) {}
+public:
+	Triangle() : Triangle(Vec3(0, 0, -1), Vec3(0.3, 0, -1), Vec3(0, 0.3, -1)) {}
 
-	Triangle(Vec3 a, Vec3 b, Vec3 c) : a(a), b(b), c(c) {}
+	Triangle(Vec3 a, Vec3 b, Vec3 c) : A(a), B(b), C(c) {}
 
-	bool hit(const Ray& ray, Ray& normal) { return false; }
+	bool hit(const Ray& ray, Ray& normal) const;
 
-	Vec3 a;
-	Vec3 b;
-	Vec3 c;
+	Vec3 A;
+	Vec3 B;
+	Vec3 C;
 
 };
 
