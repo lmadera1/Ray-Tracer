@@ -3,8 +3,8 @@
 #include "Ray Tracer.h"
 
 string filename = "output.png";
-int width = 2560;
-int height = 1440;
+int width = 1920;
+int height = 1080;
 
 Camera camera;
 
@@ -32,6 +32,12 @@ int main()
 
     triangle->material.color = Vec3(255, 0, 0) / 255;
 
+    triangle->A = Vec3(0, -0.3, -1);
+
+    triangle->B = Vec3(0.5, 0.2, -1);
+
+    triangle->C = Vec3(0, 0.4, -1);
+
     objects.push_back(triangle);
 
     
@@ -41,7 +47,7 @@ int main()
 
     sphere->material.color = Vec3(255, 0, 0) / 255;
 
-    objects.push_back(sphere);
+    //objects.push_back(sphere);
 
     
 
@@ -108,16 +114,15 @@ Vec3 GetColor(const float i, const float j)
 
     for (Object* object : objects) {
 
+
         if (object->hit(ray, normal)) {
+            
+
             Material material = object->material;
 
             //Calculate diffuse
-            float brightness = 0;
             float dotProduct = dot(-1 * sun.direction, normal.direction);
-            if (dotProduct > 0)
-            {
-                brightness = dotProduct;
-            }
+            float brightness = max(0.0f, dotProduct);
 
             //Calculate specular
             Vec3 V = ray.direction.normalize();

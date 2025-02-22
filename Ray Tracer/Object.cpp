@@ -36,29 +36,15 @@ bool Triangle::hit(const Ray& ray, Ray& normal) const {
 
 	Vec3 P = ray.origin + t * ray.direction;
 
-	Vec3 PA = P - A;
+	float TotalArea = area(B - A, C - A);
 
-	Vec3 BA = B - A;
+	float u = area(B - P, C - P) / TotalArea;
 
-	Vec3 CA = C - A;
+	float v = area(A - P, C - P) / TotalArea;
 
-	float u = dot(PA, BA) / dot(BA, BA);
+	float w = area(A - P, B - P) / TotalArea;
 
-	float v = dot(PA, CA) / dot(CA, CA);
-
-	if (u < 0 || v < 0 || u + v > 1) return false;
-
-
-	//|a||b|cos(theta) = dot(a, b)
-
-
-
-	// proj = |a|cos(theta) * b.normalize()  = comp * b.normalize()
-	//comp = |a|cos(theta) = dot(a, b) / |b|
-
-	// proj = u * b
-	// u = comp / |b| = dot(a, b) / |b|^2 = dot(a, b) / dot(b, b)
-	// a = 
+	if (u < 0 || v < 0 || w < 0 || u + v + w > 1.001 || u + v + w < 0.999) return false;
 
 	normal.origin = P;
 	normal.direction = N;

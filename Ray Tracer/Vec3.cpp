@@ -11,3 +11,7 @@ Vec3 cross(const Vec3& first, const Vec3& second)
 
 	return Vec3(x, y, z);
 }
+
+float area(const Vec3& first, const Vec3& second) {
+	return cross(first, second).length();
+}
