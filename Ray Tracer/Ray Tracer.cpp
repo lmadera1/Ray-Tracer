@@ -15,8 +15,7 @@ vector<Object*> objects;
 Sun sun;
 
 
-//Bug discovered: When single triangle with a = b = c = 0
-
+//TODO: Known bug. Colinear triangles
 
 int main()
 {
@@ -28,31 +27,10 @@ int main()
 
     camera.SetAspectRatio(aspect_ratio);
 
-    Triangle* triangle = new Triangle();
-
-    triangle->material.color = Vec3(255, 0, 0) / 255;
-
-    triangle->A = Vec3(0, -0.3, -1);
-
-    triangle->B = Vec3(0.5, 0.2, -1);
-
-    triangle->C = Vec3(0, 0.4, -1);
-
-    objects.push_back(triangle);
-
-    
-    Sphere* sphere = new Sphere();
-
-    sphere->center = Vec3(0, 0, -3);
-
-    sphere->material.color = Vec3(255, 0, 0) / 255;
-
-    //objects.push_back(sphere);
-
-    
+    CreateObjects();
 
     sun = Sun();
-    sun.direction = Vec3(0, -1, -1).normalize();
+    sun.direction = Vec3(0, -1, -0.7).normalize();
 
     cout << "Printing Image" << endl;
     GetImage(image, width, height);
@@ -65,11 +43,53 @@ int main()
         return 1;
     }
 
-    delete sphere;
+    //Delete objects
 
-    delete triangle;
+    for (auto object : objects) {
+        delete object;
+    }
 
     return 0;
+}
+
+//TODO: Modify function to read from a file instead
+void CreateObjects() {
+    //Create Sphere
+    Sphere* sphere = new Sphere();
+    sphere->center = Vec3(0, 0, -1);
+    sphere->radius = 0.2;
+    sphere->SetColor(Vec3(255, 0, 0));
+    objects.push_back(sphere);
+
+    //Create floor
+    Vec3 v1(-0.6, -0.3, -0.7);
+    Vec3 v2(0.6, -0.3, -0.7);
+    Vec3 v3(-0.6, -0.3, -1.3);
+    Vec3 v4(0.6, -0.3, -1.3);
+
+    Vec3 color(0, 0, 200);
+
+    Triangle* triangle1 = new Triangle();
+
+    triangle1->A = v1;
+    triangle1->B = v2;
+    triangle1->C = v3;
+
+    triangle1->SetColor(color);
+
+    objects.push_back(triangle1);
+
+    Triangle* triangle2 = new Triangle();
+
+    triangle2->A = v2;
+    triangle2->B = v4;
+    triangle2->C = v3;
+
+    triangle2->SetColor(color);
+
+    objects.push_back(triangle2);
+
+
 }
 
 void GetImage(vector<unsigned char>& image, const int width, const int height) 
@@ -121,7 +141,7 @@ Vec3 GetColor(const float i, const float j)
             Material material = object->material;
 
             //Calculate diffuse
-            float dotProduct = dot(-1 * sun.direction, normal.direction);
+            float dotProduct = dot(-1*sun.direction, normal.direction); 
             float brightness = max(0.0f, dotProduct);
 
             //Calculate specular

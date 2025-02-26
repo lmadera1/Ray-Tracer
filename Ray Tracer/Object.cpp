@@ -26,9 +26,14 @@ bool Sphere::hit(const Ray& ray, Ray& normal) const {
 	return true;
 }
 
+
 bool Triangle::hit(const Ray& ray, Ray& normal) const {
- 
+
+	
 	Vec3 N = cross(B - A, C - A).normalize();
+
+	//Ray parallel to triangle
+	if (dot(N, ray.direction) == 0) return false;
 
 	float t = dot(N, A - ray.origin) / dot(N, ray.direction);
 
@@ -36,18 +41,24 @@ bool Triangle::hit(const Ray& ray, Ray& normal) const {
 
 	Vec3 P = ray.origin + t * ray.direction;
 
-	float TotalArea = area(B - A, C - A);
+	float u = dot(N, cross(B - A, P - A));
+	float v = dot(N, cross(C - B, P - B));
+	float w = dot(N, cross(A - C, P - C));
 
-	float u = area(B - P, C - P) / TotalArea;
-
-	float v = area(A - P, C - P) / TotalArea;
-
-	float w = area(A - P, B - P) / TotalArea;
-
-	if (u < 0 || v < 0 || w < 0 || u + v + w > 1.001 || u + v + w < 0.999) return false;
+	if (u < 0 || v < 0 || w < 0) return false;
 
 	normal.origin = P;
-	normal.direction = N;
+	normal.direction = -1 * N;
 
 	return true;
+
+	
+}
+
+void Object::SetColor(const Vec3& color) {
+
+	if (color.x < 0 || color.y < 0 || color.z < 0) return;
+	if (color.x > 255 || color.y > 255 || color.z > 255) return;
+
+	material.color = color / 255;
 }

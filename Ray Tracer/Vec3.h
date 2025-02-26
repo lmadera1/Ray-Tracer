@@ -57,8 +57,6 @@ float dot(const Vec3& first, const Vec3& second);
 
 Vec3 cross(const Vec3& first, const Vec3& second);
 
-float area(const Vec3& AB, const Vec3& AC);
-
 
 class Ray 
 {

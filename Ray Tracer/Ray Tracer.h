@@ -14,3 +14,4 @@ using namespace std;
 
 void GetImage(vector<unsigned char>& image, const int width, const int height);
 Vec3 GetColor(const float i, const float j);
+void CreateObjects();

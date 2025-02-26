@@ -14,6 +14,8 @@ public:
 		return false; 
 	}
 
+	void SetColor(const Vec3& color);
+
 	Material material;
 
 	
