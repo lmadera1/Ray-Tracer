@@ -14,6 +14,8 @@ bool Sphere::hit(const Ray& ray, Ray& normal) const {
 
 	else t = min(-b + sqrt(rad), -b - sqrt(rad)) / (2 * a);
 
+	if (t <= 0) return false;
+
 	Vec3 Phit = ray.origin + ray.direction * t;
 
 	Vec3 Nhit = Phit - center;

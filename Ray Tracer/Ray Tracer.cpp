@@ -6,34 +6,16 @@ string filename = "output.png";
 int width = 1920;
 int height = 1080;
 
-Camera camera;
-
-Vec3 background;
-
-vector<Object*> objects;
-
-Sun sun;
-
-
 //TODO: Known bug. Colinear triangles
 
 int main()
 {
     vector<unsigned char> image;
 
-    float aspect_ratio = static_cast<float>(width) / height;
-
-    camera = Camera();
-
-    camera.SetAspectRatio(aspect_ratio);
-
-    CreateObjects();
-
-    sun = Sun();
-    sun.direction = Vec3(0, -1, -0.7).normalize();
+	RayTracer rayTracer = RayTracer(filename, width, height);
 
     cout << "Printing Image" << endl;
-    GetImage(image, width, height);
+    rayTracer.GetImage(image, width, height);
 
     cout << "Writing to File" << endl;
     unsigned error = lodepng::encode(filename, image, width, height);
@@ -43,17 +25,11 @@ int main()
         return 1;
     }
 
-    //Delete objects
-
-    for (auto object : objects) {
-        delete object;
-    }
-
     return 0;
 }
 
 //TODO: Modify function to read from a file instead
-void CreateObjects() {
+void RayTracer::CreateObjects() {
     //Create Sphere
     Sphere* sphere = new Sphere();
     sphere->center = Vec3(0, 0, -1);
@@ -64,8 +40,8 @@ void CreateObjects() {
     //Create floor
     Vec3 v1(-0.6, -0.3, -0.7);
     Vec3 v2(0.6, -0.3, -0.7);
-    Vec3 v3(-0.6, -0.3, -1.3);
-    Vec3 v4(0.6, -0.3, -1.3);
+    Vec3 v3(-0.6, -0.3, -1.4);
+    Vec3 v4(0.6, -0.3, -1.4);
 
     Vec3 color(0, 0, 200);
 
@@ -92,7 +68,7 @@ void CreateObjects() {
 
 }
 
-void GetImage(vector<unsigned char>& image, const int width, const int height) 
+void RayTracer::GetImage(vector<unsigned char>& image, const int width, const int height) 
 {
     for (int h = 0; h < height; h++) {
         
@@ -115,13 +91,12 @@ void GetImage(vector<unsigned char>& image, const int width, const int height)
     }
 }
 
-
 //i and j go from [0, 1]
-Vec3 GetColor(const float i, const float j) 
+Vec3 RayTracer::GetColor(const float i, const float j)
 {
 
-    Vec3 origin = camera.UpperLeft() + 
-        i * camera.SensorW() * camera.Right() - 
+    Vec3 origin = camera.UpperLeft() +
+        i * camera.SensorW() * camera.Right() -
         j * camera.SensorH() * camera.Up();
 
     Vec3 magnitude = origin - camera.Origin();
@@ -136,12 +111,24 @@ Vec3 GetColor(const float i, const float j)
 
 
         if (object->hit(ray, normal)) {
-            
+
 
             Material material = object->material;
 
+            //Check if in shadow
+            Ray shadowRay = Ray();
+
+            shadowRay.direction = -1 * sun.direction;
+            shadowRay.origin = normal.origin + normal.direction * numeric_limits<float>::epsilon();
+
+            Ray norm;
+
+            for (auto object : objects) {
+                if (object->hit(shadowRay, norm)) return Vec3();
+            }
+
             //Calculate diffuse
-            float dotProduct = dot(-1*sun.direction, normal.direction); 
+            float dotProduct = dot(-1 * sun.direction, normal.direction);
             float brightness = max(0.0f, dotProduct);
 
             //Calculate specular
@@ -155,7 +142,8 @@ Vec3 GetColor(const float i, const float j)
             specular = pow(specular, material.s);
 
 
-            Vec3 color = material.kd * material.color * brightness 
+            //Calculate color
+            Vec3 color = material.kd * material.color * brightness
                 + material.ks * specular * material.specularColor;
 
             color.x = min(1.0f, color.x);
