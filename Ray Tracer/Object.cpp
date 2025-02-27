@@ -1,6 +1,6 @@
 #include "Object.h"
 
-bool Sphere::hit(const Ray& ray, Ray& normal) const {
+float Sphere::hit(const Ray& ray, Ray& normal) const {
 	Vec3 OC = ray.origin - center;
 	double a = dot(ray.direction, ray.direction);
 	double b = 2 * dot(ray.direction, OC);
@@ -25,11 +25,11 @@ bool Sphere::hit(const Ray& ray, Ray& normal) const {
 	normal.direction = Nhit.normalize();
 
 
-	return true;
+	return t;
 }
 
 
-bool Triangle::hit(const Ray& ray, Ray& normal) const {
+float Triangle::hit(const Ray& ray, Ray& normal) const {
 
 	
 	Vec3 N = cross(B - A, C - A).normalize();
@@ -52,7 +52,7 @@ bool Triangle::hit(const Ray& ray, Ray& normal) const {
 	normal.origin = P;
 	normal.direction = -1 * N;
 
-	return true;
+	return t;
 
 	
 }

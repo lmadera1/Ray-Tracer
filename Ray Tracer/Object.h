@@ -10,7 +10,7 @@ class Object
 {
 public:
 
-	virtual bool hit(const Ray& ray, Ray& normal) const {
+	virtual float hit(const Ray& ray, Ray& normal) const {
 		return false; 
 	}
 
@@ -30,7 +30,7 @@ public:
 		material = Material();
 	}
 
-	bool hit(const Ray& ray, Ray& normal) const;
+	float hit(const Ray& ray, Ray& normal) const;
 
 	float radius;
 	Vec3 center;
@@ -45,7 +45,7 @@ public:
 
 	Triangle(Vec3 a, Vec3 b, Vec3 c) : A(a), B(b), C(c) {}
 
-	bool hit(const Ray& ray, Ray& normal) const;
+	float hit(const Ray& ray, Ray& normal) const;
 
 	Vec3 A;
 	Vec3 B;

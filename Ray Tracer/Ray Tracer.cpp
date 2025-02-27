@@ -15,7 +15,7 @@ int main()
 	RayTracer rayTracer = RayTracer(filename, width, height);
 
     cout << "Printing Image" << endl;
-    rayTracer.GetImage(image, width, height);
+    rayTracer.GetImage(image);
 
     cout << "Writing to File" << endl;
     unsigned error = lodepng::encode(filename, image, width, height);
@@ -30,11 +30,19 @@ int main()
 
 //TODO: Modify function to read from a file instead
 void RayTracer::CreateObjects() {
+
     //Create Sphere
     Sphere* sphere = new Sphere();
     sphere->center = Vec3(0, 0, -1);
     sphere->radius = 0.2;
     sphere->SetColor(Vec3(255, 0, 0));
+    objects.push_back(sphere);
+
+    //Create Sphere
+    sphere = new Sphere();
+    sphere->center = Vec3(0.2, 0, -0.7);
+    sphere->radius = 0.1;
+    sphere->SetColor(Vec3(0, 255, 0));
     objects.push_back(sphere);
 
     //Create floor
@@ -45,30 +53,30 @@ void RayTracer::CreateObjects() {
 
     Vec3 color(0, 0, 200);
 
-    Triangle* triangle1 = new Triangle();
+    Triangle* triangle = new Triangle();
 
-    triangle1->A = v1;
-    triangle1->B = v2;
-    triangle1->C = v3;
+    triangle->A = v1;
+    triangle->B = v2;
+    triangle->C = v3;
 
-    triangle1->SetColor(color);
+    triangle->SetColor(color);
 
-    objects.push_back(triangle1);
+    objects.push_back(triangle);
 
-    Triangle* triangle2 = new Triangle();
+    triangle = new Triangle();
 
-    triangle2->A = v2;
-    triangle2->B = v4;
-    triangle2->C = v3;
+    triangle->A = v2;
+    triangle->B = v4;
+    triangle->C = v3;
 
-    triangle2->SetColor(color);
+    triangle->SetColor(color);
 
-    objects.push_back(triangle2);
+    objects.push_back(triangle);
 
 
 }
 
-void RayTracer::GetImage(vector<unsigned char>& image, const int width, const int height) 
+void RayTracer::GetImage(vector<unsigned char>& image) 
 {
     for (int h = 0; h < height; h++) {
         
@@ -105,56 +113,70 @@ Vec3 RayTracer::GetColor(const float i, const float j)
 
     Ray ray(origin, magnitude);
 
-    Ray normal;
+	float t = numeric_limits<float>::max();
+
+	Object* hitObject = nullptr;
+	Ray hitNormal;
+
+	//Find closest object
 
     for (Object* object : objects) {
 
+        Ray normal;
 
-        if (object->hit(ray, normal)) {
+		float hitT = object->hit(ray, normal);
 
+        if (hitT > 0 && hitT < t) {
 
-            Material material = object->material;
-
-            //Check if in shadow
-            Ray shadowRay = Ray();
-
-            shadowRay.direction = -1 * sun.direction;
-            shadowRay.origin = normal.origin + normal.direction * numeric_limits<float>::epsilon();
-
-            Ray norm;
-
-            for (auto object : objects) {
-                if (object->hit(shadowRay, norm)) return Vec3();
-            }
-
-            //Calculate diffuse
-            float dotProduct = dot(-1 * sun.direction, normal.direction);
-            float brightness = max(0.0f, dotProduct);
-
-            //Calculate specular
-            Vec3 V = ray.direction.normalize();
-
-            Vec3 R = 2 * dot(normal.direction, sun.direction) * normal.direction - sun.direction;
-
-            float specular = max(0.0f, dot(R, V));
-
-
-            specular = pow(specular, material.s);
-
-
-            //Calculate color
-            Vec3 color = material.kd * material.color * brightness
-                + material.ks * specular * material.specularColor;
-
-            color.x = min(1.0f, color.x);
-
-            color.y = min(1.0f, color.y);
-
-            color.z = min(1.0f, color.z);
-
-
-            return color;
+			hitObject = object;
+			hitNormal = normal;
+			t = hitT;
         }
+    }
+
+	//Get color from closest object
+    if (hitObject != nullptr) {
+        Material material = hitObject->material;
+
+        //Check if in shadow
+        Ray shadowRay = Ray();
+
+        shadowRay.direction = -1 * sun.direction;
+        shadowRay.origin = hitNormal.origin + hitNormal.direction * numeric_limits<float>::epsilon();
+
+        Ray norm;
+
+        for (auto object : objects) {
+            if (object->hit(shadowRay, norm)) return Vec3();
+        }
+
+        //Calculate diffuse
+        float dotProduct = dot(-1 * sun.direction, hitNormal.direction);
+        float brightness = max(0.0f, dotProduct);
+
+        //Calculate specular
+        Vec3 V = ray.direction.normalize();
+
+        Vec3 R = 2 * dot(hitNormal.direction, sun.direction) * hitNormal.direction - sun.direction;
+
+        float specular = max(0.0f, dot(R, V));
+
+
+        specular = pow(specular, material.s);
+
+
+        //Calculate color
+        Vec3 color = material.kd * material.color * brightness
+            + material.ks * specular * material.specularColor;
+
+        color.x = min(1.0f, color.x);
+
+        color.y = min(1.0f, color.y);
+
+        color.z = min(1.0f, color.z);
+
+
+        return color;
     }
 
     //Gradient from blue to white

@@ -39,11 +39,11 @@ public:
 		}
 	}
 
-	void GetImage(vector<unsigned char>& image, const int width, const int height);
+	void GetImage(vector<unsigned char>& image);
 
 	void CreateObjects();
 
-	Vec3 GetColor(const float i, const float j);
+	
 
 	Camera camera;
 	vector<Object*> objects;
@@ -52,4 +52,7 @@ public:
 
 	int width;
 	int height;
+
+private:
+	Vec3 GetColor(const float i, const float j);
 };
