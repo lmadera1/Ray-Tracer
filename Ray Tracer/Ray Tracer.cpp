@@ -81,7 +81,20 @@ void RayTracer::GetImage(vector<unsigned char>& image)
     for (int h = 0; h < height; h++) {
         
         for (int w = 0; w < width; w++) {
-            Vec3 color = GetColor(static_cast<float>(w) / width, static_cast<float>(h) / height);
+
+			float i = static_cast<float>(w) / width;
+			float j = static_cast<float>(h) / height;
+
+            Vec3 origin = camera.UpperLeft() +
+                i * camera.SensorW() * camera.Right() -
+                j * camera.SensorH() * camera.Up();
+
+            Vec3 magnitude = origin - camera.Origin();
+
+            magnitude = magnitude.normalize();
+
+            Ray ray(origin, magnitude);
+            Vec3 color = GetColor(ray, maxDepth);
             //Convert color to values of 255
             color *= 255;
 
@@ -99,19 +112,19 @@ void RayTracer::GetImage(vector<unsigned char>& image)
     }
 }
 
-//i and j go from [0, 1]
-Vec3 RayTracer::GetColor(const float i, const float j)
+
+Vec3 RayTracer::GetColor(const Ray& ray, const int depth)
 {
+    //Background color
+    Vec3 up = Vec3(0, 1, 0);
 
-    Vec3 origin = camera.UpperLeft() +
-        i * camera.SensorW() * camera.Right() -
-        j * camera.SensorH() * camera.Up();
+    float dotProduct = dot(ray.direction, up);
 
-    Vec3 magnitude = origin - camera.Origin();
+    float temp = (1 - dotProduct) / 2;
+    //Gradient from blue to white
+    Vec3 background = Vec3(temp, temp, 1);
 
-    magnitude = magnitude.normalize();
-
-    Ray ray(origin, magnitude);
+    if (depth == 0) return background;
 
 	float t = numeric_limits<float>::max();
 
@@ -140,14 +153,19 @@ Vec3 RayTracer::GetColor(const float i, const float j)
 
         //Check if in shadow
         Ray shadowRay = Ray();
-
         shadowRay.direction = -1 * sun.direction;
         shadowRay.origin = hitNormal.origin + hitNormal.direction * numeric_limits<float>::epsilon();
 
         Ray norm;
 
+        Ray reflectedRay = Ray();
+		reflectedRay.direction = ray.direction - 2 * dot(ray.direction, hitNormal.direction) * hitNormal.direction;
+		reflectedRay.origin = hitNormal.origin + reflectedRay.direction * numeric_limits<float>::epsilon();
+
         for (auto object : objects) {
-            if (object->hit(shadowRay, norm)) return Vec3();
+            if (object->hit(shadowRay, norm)) {
+				return material.kr * GetColor(reflectedRay, depth - 1);
+            }
         }
 
         //Calculate diffuse
@@ -161,13 +179,13 @@ Vec3 RayTracer::GetColor(const float i, const float j)
 
         float specular = max(0.0f, dot(R, V));
 
-
         specular = pow(specular, material.s);
 
 
         //Calculate color
         Vec3 color = material.kd * material.color * brightness
-            + material.ks * specular * material.specularColor;
+            + material.ks * specular * sun.color
+            + material.kr * GetColor(reflectedRay, depth - 1);
 
         color.x = min(1.0f, color.x);
 
@@ -179,7 +197,7 @@ Vec3 RayTracer::GetColor(const float i, const float j)
         return color;
     }
 
-    //Gradient from blue to white
-    return Vec3(j, j, 1);
+    
+	return background;
 }
 

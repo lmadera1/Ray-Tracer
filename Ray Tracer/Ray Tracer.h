@@ -30,6 +30,8 @@ public:
 
 		CreateObjects();
 
+		maxDepth = 4;
+
 	}
 
 	~RayTracer()
@@ -49,10 +51,11 @@ public:
 	vector<Object*> objects;
 	Sun sun;
 	string filename;
+	int maxDepth;
 
 	int width;
 	int height;
 
 private:
-	Vec3 GetColor(const float i, const float j);
+	Vec3 GetColor(const Ray& ray, const int depth);
 };

@@ -130,9 +130,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="Camera.cpp" />
-    <ClCompile Include="Light.cpp" />
     <ClCompile Include="lodepng.cpp" />
-    <ClCompile Include="Material.cpp" />
     <ClCompile Include="Object.cpp" />
     <ClCompile Include="Ray Tracer.cpp" />
     <ClCompile Include="Sun.cpp" />

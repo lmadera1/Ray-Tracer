@@ -2,6 +2,8 @@
 #include "Vec3.h"
 class Light
 {
+public:
+	Vec3 color;
 };
 
 class Sun : public Light 
@@ -12,7 +14,7 @@ public:
 	}
 
 	Sun(Vec3 dir) {
-
+		color = Vec3(1, 1, 1);
 		direction = dir.normalize();
 	}
 
