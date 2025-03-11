@@ -361,3 +361,6 @@ MigrationBackup/
 
 # Fody - auto-generated XML schema
 FodyWeavers.xsd
+/Ray Tracer/head-of-david.stl
+/Ray Tracer/Mug.stl
+/Ray Tracer/output.stl
