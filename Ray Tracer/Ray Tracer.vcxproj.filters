@@ -24,9 +24,6 @@
     <ClCompile Include="Vec3.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Sun.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="lodepng.cpp">
       <Filter>Resource Files</Filter>
     </ClCompile>
@@ -45,9 +42,6 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Light.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="Sun.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="lodepng.h">

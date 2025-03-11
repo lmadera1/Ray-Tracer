@@ -39,6 +39,14 @@ public:
 		*this = *this / scalar;
 	}
 
+	void operator+=(const Vec3& other) {
+		*this = *this + other;
+	}
+
+	void operator-=(const Vec3& other) {
+		*this = *this - other;
+	}
+
 	Vec3 normalize() const {
 		return Vec3(*this) / this->length();
 	}
@@ -56,6 +64,8 @@ public:
 float dot(const Vec3& first, const Vec3& second);
 
 Vec3 cross(const Vec3& first, const Vec3& second);
+
+Vec3 FromPolar(const float radius, const float theta, const float phi);
 
 
 class Ray 

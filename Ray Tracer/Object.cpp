@@ -1,63 +1,44 @@
 #include "Object.h"
 
-float Sphere::hit(const Ray& ray, Ray& normal) const {
-	Vec3 OC = ray.origin - center;
-	double a = dot(ray.direction, ray.direction);
-	double b = 2 * dot(ray.direction, OC);
-	double c = dot(OC, OC) - radius * radius;
-	double rad = b * b - 4 * a * c;
+float Triangle::hit(const Ray& ray, Ray& hitNormal) const {
+	Vec3 edge1 = B - A;
+	Vec3 edge2 = C - A;
 
-	if (rad < 0) return false;
+	Vec3 normal = cross(edge1, edge2).normalize();
 
-	double t;
-	if (rad == 0) { t = -b / (2 * a); }
+	Vec3 h = cross(ray.direction, edge2);
 
-	else t = min(-b + sqrt(rad), -b - sqrt(rad)) / (2 * a);
+	float a = dot(edge1, h);
 
-	if (t <= 0) return false;
+	if (abs(a) < numeric_limits<float>::epsilon()) return -1;
 
-	Vec3 Phit = ray.origin + ray.direction * t;
+	float f = 1 / a;
 
-	Vec3 Nhit = Phit - center;
+	Vec3 s = ray.origin - A;
 
-	normal.origin = Phit;
+	float u = dot(s, h) * f;
 
-	normal.direction = Nhit.normalize();
+	if (u < 0 || u > 1) return -1;
+
+	Vec3 q = cross(s, edge1);
+
+	float v = dot(ray.direction, q) * f;
+
+	if (v < 0 || v > 1 || u + v > 1) return -1;
 
 
+	float t = dot(edge2, q) * f;
+
+	if (t <= numeric_limits<float>::epsilon()) return -1;
+
+	hitNormal.origin = ray.origin + t * ray.direction;
+	hitNormal.direction = normal;
 	return t;
+
 }
 
 
-float Triangle::hit(const Ray& ray, Ray& normal) const {
-
-	
-	Vec3 N = cross(B - A, C - A).normalize();
-
-	//Ray parallel to triangle
-	if (dot(N, ray.direction) == 0) return false;
-
-	float t = dot(N, A - ray.origin) / dot(N, ray.direction);
-
-	if (t <= 0) return false;
-
-	Vec3 P = ray.origin + t * ray.direction;
-
-	float u = dot(N, cross(B - A, P - A));
-	float v = dot(N, cross(C - B, P - B));
-	float w = dot(N, cross(A - C, P - C));
-
-	if (u < 0 || v < 0 || w < 0) return false;
-
-	normal.origin = P;
-	normal.direction = -1 * N;
-
-	return t;
-
-	
-}
-
-void Object::SetColor(const Vec3& color) {
+void  Triangle::SetColor(const Vec3& color) {
 
 	if (color.x < 0 || color.y < 0 || color.z < 0) return;
 	if (color.x > 255 || color.y > 255 || color.z > 255) return;

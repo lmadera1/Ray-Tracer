@@ -3,10 +3,10 @@
 #include "Ray Tracer.h"
 
 string filename = "output.png";
+string STL_In = "teapot_binary.stl";
+string STL_Out = "output.stl";
 int width = 1920;
 int height = 1080;
-
-//TODO: Known bug. Colinear triangles
 
 int main()
 {
@@ -14,10 +14,17 @@ int main()
 
 	RayTracer rayTracer = RayTracer(filename, width, height);
 
+
+	ReadSTLFile(STL_In, rayTracer);
+
+    //CreateObjects(rayTracer);
+
+    //WriteSTLFile(STL_Out, rayTracer);
+    
     cout << "Printing Image" << endl;
     rayTracer.GetImage(image);
 
-    cout << "Writing to File" << endl;
+    cout << "Writing to PNG File" << endl;
     unsigned error = lodepng::encode(filename, image, width, height);
 
     if (error) {
@@ -28,57 +35,223 @@ int main()
     return 0;
 }
 
+//Read from stl file
+void ReadSTLFile(const string& filename, RayTracer& rayTracer) {
+	ifstream file(filename, ios::binary);
+	if (!file.is_open()) {
+		cout << "Error opening file" << endl;
+		return;
+	}
+	
+    file.seekg(80); // Skip the 80-byte header
+    uint32_t triangleCount;
+    file.read(reinterpret_cast<char*>(&triangleCount), sizeof(triangleCount));
+	cout << "Triangle count: " << triangleCount << endl;
+
+	if (triangleCount == 0) {
+		cout << "No triangles found" << endl;
+		return;
+	}
+
+	for (int i = 0; i < triangleCount; i++) {
+
+		Vec3 normal;
+		file.read(reinterpret_cast<char*>(&normal), sizeof(normal));
+		Vec3 v1;
+		file.read(reinterpret_cast<char*>(&v1), sizeof(v1));
+		Vec3 v2;
+		file.read(reinterpret_cast<char*>(&v2), sizeof(v2));
+		Vec3 v3;
+		file.read(reinterpret_cast<char*>(&v3), sizeof(v3));
+		uint16_t attribute;
+		file.read(reinterpret_cast<char*>(&attribute), sizeof(attribute));
+		Triangle* triangle = new Triangle();
+		triangle->A = v1;
+		triangle->B = v2;
+		triangle->C = v3;
+		triangle->SetColor(Vec3(255, 255, 255));
+		rayTracer.triangles.push_back(triangle);
+	}
+
+	file.close();
+}
+
+//Write to STL File
+void WriteSTLFile(const string& filename, RayTracer& rayTracer) {
+    cout << "Writing STL File." << endl;
+
+    ofstream file(filename, ios::binary);
+    if (!file.is_open()) {
+        cout << "Error opening file" << endl;
+        return;
+    }
+
+    file.write("Generated STL file", 80);
+    uint32_t triangleCount = rayTracer.triangles.size();
+
+    file.write(reinterpret_cast<char*>(&triangleCount), sizeof(triangleCount));
+
+    for (auto triangle : rayTracer.triangles) {
+        Vec3 A = triangle->A;
+        Vec3 B = triangle->B;
+        Vec3 C = triangle->C;
+
+        Vec3 normal = cross(B - A, C - A).normalize();
+        file.write(reinterpret_cast<char*>(&normal), sizeof(normal));
+
+        file.write(reinterpret_cast<char*>(&A), sizeof(A));
+        file.write(reinterpret_cast<char*>(&B), sizeof(B));
+        file.write(reinterpret_cast<char*>(&C), sizeof(C));
+
+
+        uint16_t attribute;
+        file.write(reinterpret_cast<char*>(&attribute), sizeof(attribute));
+    }
+
+    file.close();
+}
+
+void PrintTriangle(const Triangle& triangle) 
+{
+    cout << triangle.A.x << " " << triangle.A.y << " " << triangle.A.z << endl;
+    cout << triangle.B.x << " " << triangle.B.y << " " << triangle.B.z << endl;
+    cout << triangle.C.x << " " << triangle.C.y << " " << triangle.C.z << endl;
+    cout << endl;
+}
+
+vector<Triangle*> CreateSphere(const float radius, const int numLat, const int numLong) 
+{
+    vector<Triangle*> sphere;
+
+    float theta = 0;
+    float phi = 0;
+
+    float  delTheta = numbers::pi / numLat;
+    float delPhi = 2 * numbers::pi / numLong;
+
+    //Iterate through all Latitudes
+
+    for (int i = 0; i < numLat; i++) {
+
+
+        float nextTheta = theta + delTheta;
+
+        phi = 0;
+
+        //Iterate through all longitudes
+        for (int j = 0; j < numLong; j++) {
+
+            float nextPhi = phi + delPhi;
+
+            Vec3 v1 = FromPolar(radius, theta, phi);
+
+            Vec3 v2 = FromPolar(radius, theta, nextPhi);
+
+            Vec3 v3 = FromPolar(radius, nextTheta, phi);
+
+            Vec3 v4 = FromPolar(radius, nextTheta, nextPhi);
+
+            if (i == 0) {
+               
+                Triangle* triangle = new Triangle(v4, v3, v1);
+                sphere.push_back(triangle);
+
+            } else if (i == numLat - 1) {
+        
+                Triangle* triangle = new Triangle(v3, v2, v1);
+                sphere.push_back(triangle);
+
+
+            } else {
+
+                Triangle* triangleA = new Triangle(v1, v2, v3);
+
+                Triangle* triangleB = new Triangle(v4, v3, v2);
+
+                sphere.push_back(triangleA);
+
+                sphere.push_back(triangleB);
+
+            }
+
+
+            phi = nextPhi;
+        }
+        theta = nextTheta;
+    }
+
+    return sphere;
+
+}
+
+
 //TODO: Modify function to read from a file instead
-void RayTracer::CreateObjects() {
+void CreateObjects(RayTracer& rayTracer) {
+    
 
-    //Create Sphere
-    Sphere* sphere = new Sphere();
-    sphere->center = Vec3(0, 0, -1);
-    sphere->radius = 0.2;
-    sphere->SetColor(Vec3(255, 0, 0));
-    objects.push_back(sphere);
+    vector<Triangle*> sphere = CreateSphere(0.1, 4, 4);
+    rayTracer.triangles.insert(rayTracer.triangles.end(), sphere.begin(), sphere.end());
 
-    //Create Sphere
-    sphere = new Sphere();
-    sphere->center = Vec3(0.2, 0, -0.7);
-    sphere->radius = 0.1;
-    sphere->SetColor(Vec3(0, 255, 0));
-    objects.push_back(sphere);
 
     //Create floor
-    Vec3 v1(-0.6, -0.3, -0.7);
-    Vec3 v2(0.6, -0.3, -0.7);
-    Vec3 v3(-0.6, -0.3, -1.4);
-    Vec3 v4(0.6, -0.3, -1.4);
 
-    Vec3 color(0, 0, 200);
+    Vec3 v1(-0.6, -0.3, 0.7);
+    Vec3 v2(0.6, -0.3, 0.7);
+    Vec3 v3(-0.6, -0.3, -0.7);
+    Vec3 v4(0.6, -0.3, -0.7);
 
-    Triangle* triangle = new Triangle();
+    Triangle* triangle = new Triangle(v1, v2, v3);
 
-    triangle->A = v1;
-    triangle->B = v2;
-    triangle->C = v3;
+    Vec3 color(0, 200, 0);
 
     triangle->SetColor(color);
 
-    objects.push_back(triangle);
+    rayTracer.triangles.push_back(triangle);
 
-    triangle = new Triangle();
-
-    triangle->A = v2;
-    triangle->B = v4;
-    triangle->C = v3;
+    triangle = new Triangle(v2, v4, v3);
 
     triangle->SetColor(color);
 
-    objects.push_back(triangle);
+    rayTracer.triangles.push_back(triangle);
 
+    //Create left wall
+
+    Vec3 v5(-0.6, 0.3, 0.7);
+    Vec3 v6(-0.6, 0.3, -0.7);
+
+    triangle = new Triangle(v1, v3, v5);
+
+    triangle->SetColor(color);
+
+    rayTracer.triangles.push_back(triangle);
+    
+    triangle = new Triangle(v5, v3, v6);
+
+    triangle->SetColor(color);
+    rayTracer.triangles.push_back(triangle);
+
+    //Create back wall
+    Vec3 v7(0.6, 0.3, -0.7);
+
+    triangle = new Triangle(v3, v4, v6);
+
+    triangle->SetColor(color);
+    rayTracer.triangles.push_back(triangle);
+
+    triangle = new Triangle(v6, v4, v7);
+    triangle->SetColor(color);
+    rayTracer.triangles.push_back(triangle);
 
 }
 
 void RayTracer::GetImage(vector<unsigned char>& image) 
 {
+
     for (int h = 0; h < height; h++) {
+
+        float percentDone = static_cast<float>(h) / height * 100.0f;
+
+        cout << percentDone << "% done." << endl;
         
         for (int w = 0; w < width; w++) {
 
@@ -89,7 +262,7 @@ void RayTracer::GetImage(vector<unsigned char>& image)
                 i * camera.SensorW() * camera.Right() -
                 j * camera.SensorH() * camera.Up();
 
-            Vec3 magnitude = origin - camera.Origin();
+            Vec3 magnitude = origin - camera.origin;
 
             magnitude = magnitude.normalize();
 
@@ -128,45 +301,54 @@ Vec3 RayTracer::GetColor(const Ray& ray, const int depth)
 
 	float t = numeric_limits<float>::max();
 
-	Object* hitObject = nullptr;
+	Triangle* hitTriangle = nullptr;
 	Ray hitNormal;
 
 	//Find closest object
+    
 
-    for (Object* object : objects) {
+    for (Triangle* triangle : triangles) {
 
         Ray normal;
 
-		float hitT = object->hit(ray, normal);
+		float hitT = triangle->hit(ray, normal);
 
         if (hitT > 0 && hitT < t) {
 
-			hitObject = object;
+			hitTriangle = triangle;
 			hitNormal = normal;
 			t = hitT;
         }
     }
-
+    
 	//Get color from closest object
-    if (hitObject != nullptr) {
-        Material material = hitObject->material;
+    if (hitTriangle != nullptr) {
+
+        Material material = hitTriangle->material;
+
+        //Calculate reflected ray
+        Ray reflectedRay = Ray();
+        reflectedRay.direction = ray.direction - 2 * dot(ray.direction, hitNormal.direction) * hitNormal.direction;
+        reflectedRay.origin = hitNormal.origin + hitNormal.direction * numeric_limits<float>::epsilon();
 
         //Check if in shadow
-        Ray shadowRay = Ray();
-        shadowRay.direction = -1 * sun.direction;
-        shadowRay.origin = hitNormal.origin + hitNormal.direction * numeric_limits<float>::epsilon();
+        if (shadows) {
+            Ray shadowRay = Ray();
+            shadowRay.direction = -1 * sun.direction;
+            shadowRay.origin = hitNormal.origin + hitNormal.direction * numeric_limits<float>::epsilon();
 
-        Ray norm;
+            Ray norm;
 
-        Ray reflectedRay = Ray();
-		reflectedRay.direction = ray.direction - 2 * dot(ray.direction, hitNormal.direction) * hitNormal.direction;
-		reflectedRay.origin = hitNormal.origin + reflectedRay.direction * numeric_limits<float>::epsilon();
 
-        for (auto object : objects) {
-            if (object->hit(shadowRay, norm)) {
-				return material.kr * GetColor(reflectedRay, depth - 1);
+            for (auto triangle : triangles) {
+                float Ttemp = triangle->hit(shadowRay, norm);
+                if (Ttemp > numeric_limits<float>::epsilon()) {
+                    return material.kr * GetColor(reflectedRay, depth - 1);
+                }
             }
         }
+
+        
 
         //Calculate diffuse
         float dotProduct = dot(-1 * sun.direction, hitNormal.direction);

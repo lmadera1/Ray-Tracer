@@ -37,11 +37,6 @@ Vec3 Camera::UpperLeft() const{
 	return Vec3(upper_left);
 }
 
-Vec3 Camera::Origin() const
-{
-	return origin;
-}
-
 float Camera::SensorW() const 
 {
 	return sensor_width;

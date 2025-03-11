@@ -21,18 +21,15 @@ public:
 
 	Vec3 UpperLeft() const;
 
-	Vec3 Origin() const;
-
 	float SensorW() const;
 
 	float SensorH() const;
 
 	~Camera();
 
-	
+	Vec3 origin;
 
 private:
-	Vec3 origin;
 	Vec3 forward;
 	Vec3 right;
 	Vec3 up;

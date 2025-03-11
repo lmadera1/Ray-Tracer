@@ -5,6 +5,7 @@
 #include <fstream>
 #include <algorithm>
 #include <limits>
+#include <numbers>
 #include "Vec3.h"
 #include "Camera.h"
 #include "Object.h"
@@ -23,32 +24,30 @@ public:
 		float aspect_ratio = static_cast<float>(width) / height;
 
 		camera = Camera();
+		camera.origin += Vec3(0, 0, 0.5);
 		camera.SetAspectRatio(aspect_ratio);
 
 		sun = Sun();
 		sun.direction = Vec3(-0.4, -1, -0.5).normalize();
 
-		CreateObjects();
-
-		maxDepth = 4;
+		maxDepth = 1;
+		shadows = false;
 
 	}
 
 	~RayTracer()
 	{
-		for (auto object : objects) {
-			delete object;
+		for (auto triangle : triangles) {
+			delete triangle;
 		}
 	}
 
 	void GetImage(vector<unsigned char>& image);
 
-	void CreateObjects();
-
 	
 
 	Camera camera;
-	vector<Object*> objects;
+	vector<Triangle*> triangles;
 	Sun sun;
 	string filename;
 	int maxDepth;
@@ -56,6 +55,16 @@ public:
 	int width;
 	int height;
 
+	bool shadows;
+
 private:
 	Vec3 GetColor(const Ray& ray, const int depth);
 };
+
+void ReadSTLFile(const string& filename, RayTracer& rayTracer);
+
+void WriteSTLFile(const string& filename, RayTracer& rayTracer);
+
+void CreateObjects(RayTracer& rayTracer);
+
+vector<Triangle*> CreateSphere(const float radius, const int numLat, const int numLong);
