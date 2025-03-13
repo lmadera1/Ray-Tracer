@@ -12,14 +12,13 @@ int main()
 {
     vector<unsigned char> image;
 
-	RayTracer rayTracer = RayTracer(filename, width, height);
+	RayTracer rayTracer = RayTracer(width, height);
 
+	//ReadSTLFile(STL_In, rayTracer);
 
-	ReadSTLFile(STL_In, rayTracer);
+    CreateObjects(rayTracer);
 
-    //CreateObjects(rayTracer);
-
-    //WriteSTLFile(STL_Out, rayTracer);
+    WriteSTLFile(STL_Out, rayTracer);
     
     cout << "Printing Image" << endl;
     rayTracer.GetImage(image);
@@ -34,6 +33,8 @@ int main()
 
     return 0;
 }
+
+/*
 
 //Read from stl file
 void ReadSTLFile(const string& filename, RayTracer& rayTracer) {
@@ -70,11 +71,13 @@ void ReadSTLFile(const string& filename, RayTracer& rayTracer) {
 		triangle->B = v2;
 		triangle->C = v3;
 		triangle->SetColor(Vec3(255, 255, 255));
-		rayTracer.triangles.push_back(triangle);
+		//rayTracer.triangles.push_back(triangle);
 	}
 
 	file.close();
 }
+*/
+
 
 //Write to STL File
 void WriteSTLFile(const string& filename, RayTracer& rayTracer) {
@@ -87,41 +90,41 @@ void WriteSTLFile(const string& filename, RayTracer& rayTracer) {
     }
 
     file.write("Generated STL file", 80);
-    uint32_t triangleCount = rayTracer.triangles.size();
+    uint32_t triangleCount = 0;
+
+    for (Object* object : rayTracer.objects) {
+        triangleCount += object->triangles.size();
+    }
 
     file.write(reinterpret_cast<char*>(&triangleCount), sizeof(triangleCount));
 
-    for (auto triangle : rayTracer.triangles) {
-        Vec3 A = triangle->A;
-        Vec3 B = triangle->B;
-        Vec3 C = triangle->C;
+    for (Object* object : rayTracer.objects) {
+        for (Triangle* triangle : object->triangles) {
+            Vec3 A = triangle->A;
+            Vec3 B = triangle->B;
+            Vec3 C = triangle->C;
 
-        Vec3 normal = cross(B - A, C - A).normalize();
-        file.write(reinterpret_cast<char*>(&normal), sizeof(normal));
+            Vec3 normal = cross(B - A, C - A).normalize();
+            file.write(reinterpret_cast<char*>(&normal), sizeof(normal));
 
-        file.write(reinterpret_cast<char*>(&A), sizeof(A));
-        file.write(reinterpret_cast<char*>(&B), sizeof(B));
-        file.write(reinterpret_cast<char*>(&C), sizeof(C));
+            file.write(reinterpret_cast<char*>(&A), sizeof(A));
+            file.write(reinterpret_cast<char*>(&B), sizeof(B));
+            file.write(reinterpret_cast<char*>(&C), sizeof(C));
 
 
-        uint16_t attribute;
-        file.write(reinterpret_cast<char*>(&attribute), sizeof(attribute));
+            uint16_t attribute;
+            file.write(reinterpret_cast<char*>(&attribute), sizeof(attribute));
+        }
     }
+
+    
 
     file.close();
 }
 
-void PrintTriangle(const Triangle& triangle) 
+Object* CreateSphere(const float radius, const int numLat, const int numLong) 
 {
-    cout << triangle.A.x << " " << triangle.A.y << " " << triangle.A.z << endl;
-    cout << triangle.B.x << " " << triangle.B.y << " " << triangle.B.z << endl;
-    cout << triangle.C.x << " " << triangle.C.y << " " << triangle.C.z << endl;
-    cout << endl;
-}
-
-vector<Triangle*> CreateSphere(const float radius, const int numLat, const int numLong) 
-{
-    vector<Triangle*> sphere;
+    vector<Triangle*> triangles;
 
     float theta = 0;
     float phi = 0;
@@ -154,12 +157,12 @@ vector<Triangle*> CreateSphere(const float radius, const int numLat, const int n
             if (i == 0) {
                
                 Triangle* triangle = new Triangle(v4, v3, v1);
-                sphere.push_back(triangle);
+                triangles.push_back(triangle);
 
             } else if (i == numLat - 1) {
         
                 Triangle* triangle = new Triangle(v3, v2, v1);
-                sphere.push_back(triangle);
+                triangles.push_back(triangle);
 
 
             } else {
@@ -168,9 +171,9 @@ vector<Triangle*> CreateSphere(const float radius, const int numLat, const int n
 
                 Triangle* triangleB = new Triangle(v4, v3, v2);
 
-                sphere.push_back(triangleA);
+                triangles.push_back(triangleA);
 
-                sphere.push_back(triangleB);
+                triangles.push_back(triangleB);
 
             }
 
@@ -180,18 +183,26 @@ vector<Triangle*> CreateSphere(const float radius, const int numLat, const int n
         theta = nextTheta;
     }
 
+    BoundingBox bb = BoundingBox(Vec3(radius, radius, radius), Vec3(-radius, -radius, -radius));
+
+    Material material = Material();
+
+    Object* sphere = new Object(triangles, material, bb);
+    
     return sphere;
 
 }
 
 
-//TODO: Modify function to read from a file instead
-void CreateObjects(RayTracer& rayTracer) {
+void CreateObjects(RayTracer& rayTracer) 
+{
     
 
-    vector<Triangle*> sphere = CreateSphere(0.1, 4, 4);
-    rayTracer.triangles.insert(rayTracer.triangles.end(), sphere.begin(), sphere.end());
+    Object* sphere = CreateSphere(0.1, 50, 50);
 
+    rayTracer.objects.push_back(sphere);
+
+    vector<Triangle*> triangles = vector<Triangle*>();
 
     //Create floor
 
@@ -202,17 +213,11 @@ void CreateObjects(RayTracer& rayTracer) {
 
     Triangle* triangle = new Triangle(v1, v2, v3);
 
-    Vec3 color(0, 200, 0);
-
-    triangle->SetColor(color);
-
-    rayTracer.triangles.push_back(triangle);
+    triangles.push_back(triangle);
 
     triangle = new Triangle(v2, v4, v3);
 
-    triangle->SetColor(color);
-
-    rayTracer.triangles.push_back(triangle);
+    triangles.push_back(triangle);
 
     //Create left wall
 
@@ -221,26 +226,30 @@ void CreateObjects(RayTracer& rayTracer) {
 
     triangle = new Triangle(v1, v3, v5);
 
-    triangle->SetColor(color);
-
-    rayTracer.triangles.push_back(triangle);
+    triangles.push_back(triangle);
     
     triangle = new Triangle(v5, v3, v6);
 
-    triangle->SetColor(color);
-    rayTracer.triangles.push_back(triangle);
+    triangles.push_back(triangle);
 
     //Create back wall
     Vec3 v7(0.6, 0.3, -0.7);
 
     triangle = new Triangle(v3, v4, v6);
 
-    triangle->SetColor(color);
-    rayTracer.triangles.push_back(triangle);
+    triangles.push_back(triangle);
 
     triangle = new Triangle(v6, v4, v7);
-    triangle->SetColor(color);
-    rayTracer.triangles.push_back(triangle);
+    
+    triangles.push_back(triangle);
+
+    Material material = Material();
+
+    BoundingBox bb = BoundingBox(-1 * v3, v3);
+
+    Object* room = new Object(triangles, material, bb);
+
+    rayTracer.objects.push_back(room);
 
 }
 
@@ -285,9 +294,11 @@ void RayTracer::GetImage(vector<unsigned char>& image)
     }
 }
 
-
 Vec3 RayTracer::GetColor(const Ray& ray, const int depth)
 {
+    //Define very small limit
+    constexpr float epsilon = 1e-6f;
+
     //Background color
     Vec3 up = Vec3(0, 1, 0);
 
@@ -301,51 +312,60 @@ Vec3 RayTracer::GetColor(const Ray& ray, const int depth)
 
 	float t = numeric_limits<float>::max();
 
-	Triangle* hitTriangle = nullptr;
+	//Triangle* hitTriangle = nullptr;
+    Object* hitObject = nullptr;
+
 	Ray hitNormal;
 
-	//Find closest object
-    
+    for (Object* object : objects) {
+        if (object->bb.hit(ray) >= 0) {
+            for (Triangle* triangle : object->triangles) {
+                Ray normal;
 
-    for (Triangle* triangle : triangles) {
+                float hitT = triangle->hit(ray, normal);
 
-        Ray normal;
+                if (hitT > 0 && hitT < t) {
 
-		float hitT = triangle->hit(ray, normal);
-
-        if (hitT > 0 && hitT < t) {
-
-			hitTriangle = triangle;
-			hitNormal = normal;
-			t = hitT;
+                    hitObject = object;
+                    hitNormal = normal;
+                    t = hitT;
+                }
+            }
         }
     }
     
 	//Get color from closest object
-    if (hitTriangle != nullptr) {
+    if (hitObject != nullptr) {
 
-        Material material = hitTriangle->material;
+        Material material = hitObject->material;
 
         //Calculate reflected ray
         Ray reflectedRay = Ray();
         reflectedRay.direction = ray.direction - 2 * dot(ray.direction, hitNormal.direction) * hitNormal.direction;
-        reflectedRay.origin = hitNormal.origin + hitNormal.direction * numeric_limits<float>::epsilon();
+        reflectedRay.origin = hitNormal.origin + reflectedRay.direction * epsilon;
 
         //Check if in shadow
         if (shadows) {
             Ray shadowRay = Ray();
             shadowRay.direction = -1 * sun.direction;
-            shadowRay.origin = hitNormal.origin + hitNormal.direction * numeric_limits<float>::epsilon();
+            shadowRay.origin = hitNormal.origin + shadowRay.direction * epsilon;
 
             Ray norm;
 
 
-            for (auto triangle : triangles) {
-                float Ttemp = triangle->hit(shadowRay, norm);
-                if (Ttemp > numeric_limits<float>::epsilon()) {
-                    return material.kr * GetColor(reflectedRay, depth - 1);
+            for (Object* object : objects) {
+                if (object->bb.hit(shadowRay) >= 0) {
+                    for (Triangle* triangle : object->triangles) {
+                        Ray norm;
+
+                        float Ttemp = triangle->hit(shadowRay, norm);
+                        if (Ttemp > 0) {
+                            return material.kr * GetColor(reflectedRay, depth - 1);
+                        }
+                    }
                 }
             }
+            
         }
 
         
