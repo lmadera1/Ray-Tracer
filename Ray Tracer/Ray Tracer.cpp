@@ -3,7 +3,7 @@
 #include "Ray Tracer.h"
 
 string filename = "output.png";
-string STL_In = "head-of-david.stl";
+string STL_In = "teapot_binary.stl";
 string STL_Out = "output.stl";
 int width = 1920;
 int height = 1080;
@@ -18,7 +18,7 @@ int main()
 
     //CreateObjects(rayTracer);
 
-    //WriteSTLFile(STL_Out, rayTracer);
+    WriteSTLFile(STL_Out, rayTracer);
     
     cout << "Printing Image" << endl;
     rayTracer.GetImage(image);
@@ -99,8 +99,64 @@ void ReadSTLFile(const string& filename, RayTracer& rayTracer) {
 	file.close();
 }
 
-/*
+void WriteSTLFile(const string& filename, RayTracer& rayTracer) {
+    cout << "Writing STL File." << endl;
 
+    ofstream file(filename, ios::binary);
+    if (!file.is_open()) {
+        cout << "Error opening file" << endl;
+        return;
+    }
+
+    file.write("Generated STL file", 80);
+
+    vector<Triangle*> triangles = vector<Triangle*>();
+
+    stack<BVHNode*> nodes;
+    for (BVHNode* object : rayTracer.objects) {
+		nodes.push(object);
+    }
+
+	while (!nodes.empty()) {
+		BVHNode* node = nodes.top();
+		nodes.pop();
+		if (node->Left != nullptr) {
+			nodes.push(node->Left);
+		}
+		if (node->Right != nullptr) {
+			nodes.push(node->Right);
+		}
+		for (Triangle* triangle : node->triangles) {
+			triangles.push_back(triangle);
+		}
+	}
+
+    //
+    uint32_t triangleCount = triangles.size();
+
+    file.write(reinterpret_cast<char*>(&triangleCount), sizeof(triangleCount));
+
+    for (Triangle* triangle : triangles) {
+        Vec3 A = triangle->A;
+        Vec3 B = triangle->B;
+        Vec3 C = triangle->C;
+
+        Vec3 normal = cross(B - A, C - A).normalize();
+        file.write(reinterpret_cast<char*>(&normal), sizeof(normal));
+
+        file.write(reinterpret_cast<char*>(&A), sizeof(A));
+        file.write(reinterpret_cast<char*>(&B), sizeof(B));
+        file.write(reinterpret_cast<char*>(&C), sizeof(C));
+
+
+        uint16_t attribute;
+        file.write(reinterpret_cast<char*>(&attribute), sizeof(attribute));
+    }
+
+
+
+}
+/*
 //Write to STL File
 void WriteSTLFile(const string& filename, RayTracer& rayTracer) {
     cout << "Writing STL File." << endl;
@@ -143,8 +199,8 @@ void WriteSTLFile(const string& filename, RayTracer& rayTracer) {
 
     file.close();
 }
-
 */
+
 
 BVHNode* CreateSphere(const float radius, const int numLat, const int numLong) 
 {
@@ -294,8 +350,8 @@ void RayTracer::GetImage(vector<unsigned char>& image)
 			}
 
             Vec3 origin = camera.UpperLeft() +
-                i * camera.SensorW() * camera.Right() -
-                j * camera.SensorH() * camera.Up();
+                i * camera.SensorW() * camera.right -
+                j * camera.SensorH() * camera.up;
 
             Vec3 magnitude = (origin - camera.origin).normalize();
 
@@ -335,15 +391,13 @@ Vec3 RayTracer::GetColor(const Ray& ray, const int depth)
     if (depth == 0) return background;
 
 	float t = numeric_limits<float>::max();
-    BVHNode* hitObject = nullptr;
+    Triangle* hitTriangle = nullptr;
 	Ray hitNormal;
 
     for (BVHNode* object : objects) {
         vector<Triangle*> hitTriangles = vector<Triangle*>();
 
-        float ttemp = -1;
-
-        object->hit(ray, hitTriangles, ttemp);
+        float ttemp = object->hit(ray, hitTriangles);
 
 		if (ttemp <= 0 || ttemp >= t) continue;
 
@@ -353,7 +407,7 @@ Vec3 RayTracer::GetColor(const Ray& ray, const int depth)
 			float hitT = triangle->hit(ray, normal);
 
 			if (hitT > 0 && hitT < t) {
-				hitObject = object;
+				hitTriangle = triangle;
 				hitNormal = normal;
 				t = hitT;
 			}
@@ -361,9 +415,9 @@ Vec3 RayTracer::GetColor(const Ray& ray, const int depth)
     }
     
 	//Get color from closest object
-    if (hitObject != nullptr) {
+    if (hitTriangle != nullptr) {
 
-        Material material = hitObject->material;
+        Material material = hitTriangle->material;
 
         //Calculate reflected ray
         Ray reflectedRay = Ray();
@@ -381,9 +435,7 @@ Vec3 RayTracer::GetColor(const Ray& ray, const int depth)
             for (BVHNode* object : objects) {
                 vector<Triangle*> hitTriangles = vector<Triangle*>();
 
-                float ttemp = -1;
-
-                object->hit(shadowRay, hitTriangles, ttemp);
+                float ttemp = object->hit(shadowRay, hitTriangles);
 
                 if (ttemp <= 0) continue;
 

@@ -11,7 +11,9 @@ class Triangle
 public:
 	Triangle() : Triangle(Vec3(0, 0, -1), Vec3(1, 0, -1), Vec3(0, 1, -1)) {}
 
-	Triangle(Vec3 a, Vec3 b, Vec3 c) : A(a), B(b), C(c) {}
+	Triangle(Vec3 a, Vec3 b, Vec3 c) : A(a), B(b), C(c) {
+		material = Material();
+	}
 
 	float hit(const Ray& ray, Ray& normal) const;
 
@@ -38,6 +40,8 @@ public:
 	Vec3 A;
 	Vec3 B;
 	Vec3 C;
+
+	Material material;
 
 };
 

@@ -18,21 +18,6 @@ void Camera::SetAspectRatio(float aspect_ratio)
 	upper_left = origin + forward * focal_length - right * sensor_width / 2 + up * sensor_height / 2;
 }
 
-Vec3 Camera::Up() const
-{
-	return Vec3(up);
-}
-
-Vec3 Camera::Right() const
-{
-	return Vec3(right);
-}
-
-Vec3 Camera::Forward() const
-{
-	return Vec3(forward);
-}
-
 Vec3 Camera::UpperLeft() const{
 	return Vec3(upper_left);
 }

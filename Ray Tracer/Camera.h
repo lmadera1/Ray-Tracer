@@ -4,6 +4,7 @@ class Camera
 {
 public:
 
+
 	Camera() : Camera(Vec3(), Vec3(0.0f, 0.0f, -1.0f))
 	{}
 
@@ -15,9 +16,7 @@ public:
 
 	void SetAspectRatio(float aspect_ratio);
 
-	Vec3 Forward() const;
-	Vec3 Up() const;
-	Vec3 Right() const;
+	
 
 	Vec3 UpperLeft() const;
 
@@ -28,11 +27,10 @@ public:
 	~Camera();
 
 	Vec3 origin;
-
-private:
 	Vec3 forward;
-	Vec3 right;
 	Vec3 up;
+	Vec3 right;
+private:
 	float focal_length;
 	Vec3 upper_left;
 	float sensor_width;
