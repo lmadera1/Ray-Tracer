@@ -3,7 +3,7 @@
 #include "Ray Tracer.h"
 
 string filename = "output.png";
-string STL_In = "teapot_binary.stl";
+string STL_In = "head-of-david.stl";
 string STL_Out = "output.stl";
 int width = 1920;
 int height = 1080;
@@ -92,7 +92,7 @@ void ReadSTLFile(const string& filename, RayTracer& rayTracer) {
 		
 	}
 
-	BVHNode* object = BuildBVH(triangles, lower, upper);
+	BVHNode* object = BuildBVH(triangles, lower, upper, -1);
 
 	rayTracer.objects.push_back(object);
 
@@ -210,7 +210,7 @@ BVHNode* CreateSphere(const float radius, const int numLat, const int numLong)
 	Vec3 upper = Vec3(radius, radius, radius);
 	Vec3 lower = Vec3(-radius, -radius, -radius);
 
-	BVHNode* sphere = BuildBVH(triangles, lower, upper);
+	BVHNode* sphere = BuildBVH(triangles, lower, upper, -1);
     
     return sphere;
 
@@ -269,7 +269,7 @@ void CreateObjects(RayTracer& rayTracer)
 	Vec3 lower = Vec3(-0.6, -0.3, -0.7);
 	//
 
-	BVHNode* room = BuildBVH(triangles, lower, upper);
+	BVHNode* room = BuildBVH(triangles, lower, upper, -1);
 
     rayTracer.objects.push_back(room);
 

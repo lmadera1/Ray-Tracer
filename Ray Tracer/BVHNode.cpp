@@ -35,7 +35,8 @@ void BVHNode::hit(const Ray& ray, vector<Triangle*>& _triangles, float& t) const
 	if (t < 0) return;
 
 	_triangles.insert(_triangles.end(), triangles.begin(), triangles.end());
-
+	
+	//Return time if leaf node else continue
 	if (Left == nullptr && Right == nullptr) return;
 
 	float leftT = -1;
@@ -48,7 +49,7 @@ void BVHNode::hit(const Ray& ray, vector<Triangle*>& _triangles, float& t) const
 
 }
 
-BVHNode* BuildBVH(vector<Triangle*>& triangles, Vec3 lower, Vec3 upper) {
+BVHNode* BuildBVH(vector<Triangle*>& triangles, Vec3 lower, Vec3 upper, int _axis) {
 	if (triangles.size() == 0) return nullptr;
 	if (triangles.size() == 1) {
 		BVHNode* node = new BVHNode(triangles);
@@ -56,16 +57,21 @@ BVHNode* BuildBVH(vector<Triangle*>& triangles, Vec3 lower, Vec3 upper) {
 		node->lower = triangles[0]->lower();
 		return node;
 	}
-	if (lower.x >= upper.x || lower.y >= upper.y || lower.z >= upper.z) {
+	if (lower.x >= upper.x && lower.y >= upper.y && lower.z >= upper.z) {
 		BVHNode* node = new BVHNode(triangles);
 		node->upper = upper;
 		node->lower = lower;
 		return node;
 	}
 	Vec3 diff = upper - lower;
-	int axis = 0;
-	if (diff.y > diff.x && diff.y > diff.z) axis = 1;
-	if (diff.z > diff.x) axis = 2;
+	int axis = _axis;
+	if (axis != 0 && axis != 1 && axis != 2) {
+		axis = 0;
+		if (diff.y > diff.x && diff.y > diff.z) axis = 1;
+		if (diff.z > diff.x) axis = 2;
+	}
+
+	
 	float mid = (upper.get(axis) + lower.get(axis)) / 2;
 
 	Vec3 leftLower = Vec3(numeric_limits<float>::max(), numeric_limits<float>::max(), numeric_limits<float>::max());
@@ -109,19 +115,27 @@ BVHNode* BuildBVH(vector<Triangle*>& triangles, Vec3 lower, Vec3 upper) {
 	}
 
 	if (left.size() == 0 || right.size() == 0) {
-		cout << "Error: left or right size is 0" << endl;
-		BVHNode* node = new BVHNode(triangles);
-		node->upper = upper;
-		node->lower = lower;
-		return node;
+		if (_axis != 0 && _axis != 1 && _axis != 2) {
+			int tempAxis = (axis + 1) % 3;
+			BVHNode* altSplit = BuildBVH(triangles, lower, upper, tempAxis);
+
+			if (altSplit != nullptr) return altSplit;
+			
+		}
+		else {
+			BVHNode* node = new BVHNode(triangles);
+			node->upper = upper;
+			node->lower = lower;
+			return node;
+		}
 
 	}
 
 	BVHNode* node = new BVHNode();
 	node->upper = upper;
 	node->lower = lower;
-	node->Left = BuildBVH(left, leftLower, leftUpper);
-	node->Right = BuildBVH(right, rightLower, rightUpper);
+	node->Left = BuildBVH(left, leftLower, leftUpper, -1);
+	node->Right = BuildBVH(right, rightLower, rightUpper, -1);
 	return node;
 }
 

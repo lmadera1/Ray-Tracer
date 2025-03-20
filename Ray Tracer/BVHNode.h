@@ -42,8 +42,8 @@ public:
 	BVHNode* Right;
 };
 
-
-BVHNode* BuildBVH(vector<Triangle*>& triangles, Vec3 lower, Vec3 upper);
+//Give -1 if you want random axis splitting
+BVHNode* BuildBVH(vector<Triangle*>& triangles, Vec3 lower, Vec3 upper, int axis);
 
 
 

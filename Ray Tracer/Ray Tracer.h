@@ -25,7 +25,7 @@ public:
 		float aspect_ratio = static_cast<float>(width) / height;
 
 		camera = Camera();
-		camera.origin += Vec3(0, 0, 15);
+		camera.origin += Vec3(0, 0, 500);
 		camera.SetAspectRatio(aspect_ratio);
 
 		sun = Sun();
@@ -33,7 +33,7 @@ public:
 
 		objects = vector<BVHNode*>();
 
-		maxDepth = 2;
+		maxDepth = 1;
 		shadows = true;
 
 	}
