@@ -11,8 +11,7 @@
 #include "Triangle.h"
 #include "Light.h"
 #include "lodepng.h"
-#include "BoundingBox.h"
-#include "Object.h"
+#include "BVHNode.h"
 
 using namespace std;
 
@@ -26,15 +25,15 @@ public:
 		float aspect_ratio = static_cast<float>(width) / height;
 
 		camera = Camera();
-		camera.origin += Vec3(0, 0, 1);
+		camera.origin += Vec3(0, 0, 15);
 		camera.SetAspectRatio(aspect_ratio);
 
 		sun = Sun();
 		sun.direction = Vec3(-0.4, -1, -0.5).normalize();
 
-		objects = vector<Object*>();
+		objects = vector<BVHNode*>();
 
-		maxDepth = 1;
+		maxDepth = 2;
 		shadows = true;
 
 	}
@@ -55,7 +54,7 @@ public:
 	int height;
 
 	bool shadows;
-	vector<Object*> objects;
+	vector<BVHNode*> objects;
 
 private:
 	Vec3 GetColor(const Ray& ray, const int depth);
@@ -67,4 +66,4 @@ void WriteSTLFile(const string& filename, RayTracer& rayTracer);
 
 void CreateObjects(RayTracer& rayTracer);
 
-Object* CreateSphere(const float radius, const int numLat, const int numLong);
+BVHNode* CreateSphere(const float radius, const int numLat, const int numLong);

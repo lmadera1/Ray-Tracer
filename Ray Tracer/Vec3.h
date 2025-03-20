@@ -47,6 +47,18 @@ public:
 		*this = *this - other;
 	}
 
+	float get(int index) const {
+		if (index == 0) return x;
+		if (index == 1) return y;
+		if (index == 2) return z;
+	}
+
+	void set(int index, float value) {
+		if (index == 0) x = value;
+		if (index == 1) y = value;
+		if (index == 2) z = value;
+	}
+
 	Vec3 normalize() const {
 		return Vec3(*this) / this->length();
 	}

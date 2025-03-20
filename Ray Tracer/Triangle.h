@@ -15,6 +15,26 @@ public:
 
 	float hit(const Ray& ray, Ray& normal) const;
 
+	Vec3 lower() const {
+		return Vec3(
+			std::min(A.x, std::min(B.x, C.x)),
+			std::min(A.y, std::min(B.y, C.y)),
+			std::min(A.z, std::min(B.z, C.z))
+		);
+	}
+
+	Vec3 upper() const {
+		return Vec3(
+			std::max(A.x, std::max(B.x, C.x)),
+			std::max(A.y, std::max(B.y, C.y)),
+			std::max(A.z, std::max(B.z, C.z))
+		);
+	}
+
+	Vec3 centroid() const {
+		return (A + B + C) / 3;
+	}
+
 	Vec3 A;
 	Vec3 B;
 	Vec3 C;

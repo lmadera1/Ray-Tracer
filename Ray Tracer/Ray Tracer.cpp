@@ -14,11 +14,11 @@ int main()
 
 	RayTracer rayTracer = RayTracer(width, height);
 
-	//ReadSTLFile(STL_In, rayTracer);
+	ReadSTLFile(STL_In, rayTracer);
 
-    CreateObjects(rayTracer);
+    //CreateObjects(rayTracer);
 
-    WriteSTLFile(STL_Out, rayTracer);
+    //WriteSTLFile(STL_Out, rayTracer);
     
     cout << "Printing Image" << endl;
     rayTracer.GetImage(image);
@@ -34,7 +34,6 @@ int main()
     return 0;
 }
 
-/*
 
 //Read from stl file
 void ReadSTLFile(const string& filename, RayTracer& rayTracer) {
@@ -54,6 +53,11 @@ void ReadSTLFile(const string& filename, RayTracer& rayTracer) {
 		return;
 	}
 
+	Vec3 upper = Vec3(numeric_limits<float>::min(), numeric_limits<float>::min(), numeric_limits<float>::min());
+	Vec3 lower = Vec3(numeric_limits<float>::max(), numeric_limits<float>::max(), numeric_limits<float>::max());
+
+	vector<Triangle*> triangles;
+
 	for (int i = 0; i < triangleCount; i++) {
 
 		Vec3 normal;
@@ -70,14 +74,32 @@ void ReadSTLFile(const string& filename, RayTracer& rayTracer) {
 		triangle->A = v1;
 		triangle->B = v2;
 		triangle->C = v3;
-		triangle->SetColor(Vec3(255, 255, 255));
-		//rayTracer.triangles.push_back(triangle);
+
+
+        upper = Vec3(
+            max(upper.x, triangle->upper().x),
+            max(upper.y, triangle->upper().y),
+            max(upper.z, triangle->upper().z)
+        );
+
+		lower = Vec3(
+			min(lower.x, triangle->lower().x),
+			min(lower.y, triangle->lower().y),
+			min(lower.z, triangle->lower().z)
+		);
+
+		triangles.push_back(triangle);
+		
 	}
+
+	BVHNode* object = BuildBVH(triangles, lower, upper);
+
+	rayTracer.objects.push_back(object);
 
 	file.close();
 }
-*/
 
+/*
 
 //Write to STL File
 void WriteSTLFile(const string& filename, RayTracer& rayTracer) {
@@ -92,13 +114,13 @@ void WriteSTLFile(const string& filename, RayTracer& rayTracer) {
     file.write("Generated STL file", 80);
     uint32_t triangleCount = 0;
 
-    for (Object* object : rayTracer.objects) {
+    for (BVHNode* object : rayTracer.objects) {
         triangleCount += object->triangles.size();
     }
 
     file.write(reinterpret_cast<char*>(&triangleCount), sizeof(triangleCount));
 
-    for (Object* object : rayTracer.objects) {
+    for (BVHNode* object : rayTracer.objects) {
         for (Triangle* triangle : object->triangles) {
             Vec3 A = triangle->A;
             Vec3 B = triangle->B;
@@ -122,7 +144,9 @@ void WriteSTLFile(const string& filename, RayTracer& rayTracer) {
     file.close();
 }
 
-Object* CreateSphere(const float radius, const int numLat, const int numLong) 
+*/
+
+BVHNode* CreateSphere(const float radius, const int numLat, const int numLong) 
 {
     vector<Triangle*> triangles;
 
@@ -183,11 +207,10 @@ Object* CreateSphere(const float radius, const int numLat, const int numLong)
         theta = nextTheta;
     }
 
-    BoundingBox bb = BoundingBox(Vec3(radius, radius, radius), Vec3(-radius, -radius, -radius));
+	Vec3 upper = Vec3(radius, radius, radius);
+	Vec3 lower = Vec3(-radius, -radius, -radius);
 
-    Material material = Material();
-
-    Object* sphere = new Object(triangles, material, bb);
+	BVHNode* sphere = BuildBVH(triangles, lower, upper);
     
     return sphere;
 
@@ -196,9 +219,8 @@ Object* CreateSphere(const float radius, const int numLat, const int numLong)
 
 void CreateObjects(RayTracer& rayTracer) 
 {
-    
+    BVHNode* sphere = CreateSphere(0.15, 100, 100);
 
-    Object* sphere = CreateSphere(0.1, 50, 50);
 
     rayTracer.objects.push_back(sphere);
 
@@ -213,7 +235,7 @@ void CreateObjects(RayTracer& rayTracer)
 
     Triangle* triangle = new Triangle(v1, v2, v3);
 
-    triangles.push_back(triangle);
+    triangles.push_back(triangle); 
 
     triangle = new Triangle(v2, v4, v3);
 
@@ -243,11 +265,11 @@ void CreateObjects(RayTracer& rayTracer)
     
     triangles.push_back(triangle);
 
-    Material material = Material();
+	Vec3 upper = Vec3(0.6, 0.3, 0.7);
+	Vec3 lower = Vec3(-0.6, -0.3, -0.7);
+	//
 
-    BoundingBox bb = BoundingBox(-1 * v3, v3);
-
-    Object* room = new Object(triangles, material, bb);
+	BVHNode* room = BuildBVH(triangles, lower, upper);
 
     rayTracer.objects.push_back(room);
 
@@ -267,13 +289,15 @@ void RayTracer::GetImage(vector<unsigned char>& image)
 			float i = static_cast<float>(w) / width;
 			float j = static_cast<float>(h) / height;
 
+			if (i == 0.5 && j == 0.5) {
+				cout << "Center" << endl;
+			}
+
             Vec3 origin = camera.UpperLeft() +
                 i * camera.SensorW() * camera.Right() -
                 j * camera.SensorH() * camera.Up();
 
-            Vec3 magnitude = origin - camera.origin;
-
-            magnitude = magnitude.normalize();
+            Vec3 magnitude = (origin - camera.origin).normalize();
 
             Ray ray(origin, magnitude);
             Vec3 color = GetColor(ray, maxDepth);
@@ -297,41 +321,43 @@ void RayTracer::GetImage(vector<unsigned char>& image)
 Vec3 RayTracer::GetColor(const Ray& ray, const int depth)
 {
     //Define very small limit
-    constexpr float epsilon = 1e-6f;
+    constexpr float epsilon = 1e-5f;
 
     //Background color
     Vec3 up = Vec3(0, 1, 0);
 
     float dotProduct = dot(ray.direction, up);
 
-    float temp = (1 - dotProduct) / 2;
+    float gradient = (1 - dotProduct) / 2;
     //Gradient from blue to white
-    Vec3 background = Vec3(temp, temp, 1);
+    Vec3 background = Vec3(gradient, gradient, 1);
 
     if (depth == 0) return background;
 
 	float t = numeric_limits<float>::max();
-
-	//Triangle* hitTriangle = nullptr;
-    Object* hitObject = nullptr;
-
+    BVHNode* hitObject = nullptr;
 	Ray hitNormal;
 
-    for (Object* object : objects) {
-        if (object->bb.hit(ray) >= 0) {
-            for (Triangle* triangle : object->triangles) {
-                Ray normal;
+    for (BVHNode* object : objects) {
+        vector<Triangle*> hitTriangles = vector<Triangle*>();
 
-                float hitT = triangle->hit(ray, normal);
+        float ttemp = -1;
 
-                if (hitT > 0 && hitT < t) {
+        object->hit(ray, hitTriangles, ttemp);
 
-                    hitObject = object;
-                    hitNormal = normal;
-                    t = hitT;
-                }
-            }
-        }
+		if (ttemp <= 0 || ttemp >= t) continue;
+
+		for (Triangle* triangle : hitTriangles) {
+			Ray normal;
+
+			float hitT = triangle->hit(ray, normal);
+
+			if (hitT > 0 && hitT < t) {
+				hitObject = object;
+				hitNormal = normal;
+				t = hitT;
+			}
+		}
     }
     
 	//Get color from closest object
@@ -352,18 +378,22 @@ Vec3 RayTracer::GetColor(const Ray& ray, const int depth)
 
             Ray norm;
 
+            for (BVHNode* object : objects) {
+                vector<Triangle*> hitTriangles = vector<Triangle*>();
 
-            for (Object* object : objects) {
-                if (object->bb.hit(shadowRay) >= 0) {
-                    for (Triangle* triangle : object->triangles) {
-                        Ray norm;
+                float ttemp = -1;
 
-                        float Ttemp = triangle->hit(shadowRay, norm);
-                        if (Ttemp > 0) {
-                            return material.kr * GetColor(reflectedRay, depth - 1);
-                        }
-                    }
-                }
+                object->hit(shadowRay, hitTriangles, ttemp);
+
+                if (ttemp <= 0) continue;
+
+				for (Triangle* triangle : hitTriangles) {
+					float Ttemp = triangle->hit(shadowRay, norm);
+					if (Ttemp > 0) {
+                        return material.kr * GetColor(reflectedRay, depth - 1);
+					}
+				}
+
             }
             
         }
